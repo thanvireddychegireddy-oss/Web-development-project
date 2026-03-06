@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Movie Ticket Booking</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+    margin: 0;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #38bdf8;
+}
+
+form {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+label {
+    font-weight: bold;
+}
+
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin: 8px 0 15px;
+    border-radius: 5px;
+    border: none;
+}
+
+.seats {
+    display: grid;
+    grid-template-columns: repeat(8, 40px);
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.seat {
+    width: 40px;
+    height: 40px;
+    background: #334155;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.seat.selected {
+    background: #22c55e;
+}
+
+.seat.booked {
+    background: #ef4444;
+    cursor: not-allowed;
+}
+
+.summary {
+    text-align: center;
+    margin: 10px 0;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background: #38bdf8;
+    border: none;
+    color: black;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0ea5e9;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+<h1>🎬 Movie Ticket Booking</h1>
+
+<form onsubmit="bookTicket(event)">
+
+<label>Name</label>
+<input type="text" id="name" required>
+
+<label>Select Movie</label>
+<select id="movie">
+<option value="150">Pushpa 2 (₹150)</option>
+<option value="180">Salaar (₹180)</option>
+<option value="200">RRR (₹200)</option>
+<option value="250">Avatar (₹250)</option>
+</select>
+
+<h3>Select Seats</h3>
+
+<div class="seats" id="seatContainer"></div>
+
+<div class="summary">
+<p>Seats Selected: <span id="count">0</span></p>
+<p>Total Price: ₹<span id="total">0</span></p>
+</div>
+
+<button type="submit">Book Ticket</button>
+
+</form>
+</div>
+
+<script>
+const seatContainer = document.getElementById("seatContainer");
+const count = document.getElementById("count");
+const total = document.getElementById("total");
+const movie = document.getElementById("movie");
+
+let ticketPrice = +movie.value;
+
+// Create seats
+for (let i = 0; i < 32; i++) {
+    const seat = document.createElement("div");
+    seat.classList.add("seat");
+
+    if (Math.random() < 0.2) seat.classList.add("booked");
+
+    seat.addEventListener("click", () => {
+        if (!seat.classList.contains("booked")) {
+            seat.classList.toggle("selected");
+            updateTotal();
+        }
+    });
+
+    seatContainer.appendChild(seat);
+}
+
+movie.addEventListener("change", e => {
+    ticketPrice = +e.target.value;
+    updateTotal();
+});
+
+function updateTotal() {
+    const selectedSeats = document.querySelectorAll(".seat.selected");
+    count.innerText = selectedSeats.length;
+    total.innerText = selectedSeats.length * ticketPrice;
+}
+
+function bookTicket(e) {
+    e.preventDefault();
+
+    const name = document.getElementById("name").value;
+    const selectedSeats = document.querySelectorAll(".seat.selected").length;
+
+    if (selectedSeats === 0) {
+        alert("Please select at least one seat");
+        return;
+    }
+
+    alert(`🎉 Booking Confirmed!\n\nName: ${name}\nSeats: ${selectedSeats}\nTotal: ₹${total.innerText}`);
+}
+</script>
+
+</body>
+</html>
