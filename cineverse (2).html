@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CinéVerse — Book Movie Tickets</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07070f;--surface:#0d0d1f;--surface2:#12122a;--surface3:#181835;
+  --border:#1f1f40;--border2:#2a2a55;
+  --gold:#f0b429;--gold2:#e8772a;--gold3:#ffd700;
+  --red:#ff4d6d;--green:#06d6a0;--blue:#4cc9f0;--purple:#c77dff;
+  --text:#eeeeff;--muted:#7070a0;
+  --font-display:'Cormorant Garamond',serif;
+  --font-body:'Outfit',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;}
+
+.page{display:none;animation:fadeUp .4s ease both;}
+.page.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes toastIn{0%{opacity:0;transform:translateX(-50%) translateY(24px)}15%,80%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-12px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmerPay{0%{background-position:-200% 0}100%{background-position:200% 0}}
+
+/* NAVBAR */
+#navbar{position:fixed;top:0;left:0;right:0;z-index:500;height:68px;background:rgba(7,7,15,0.94);backdrop-filter:blur(28px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;}
+.logo{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.logo-icon{font-size:24px;}
+.logo-text{font-family:var(--font-display);font-size:26px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1px;}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;display:block;margin-top:-6px;}
+.nav-links{display:flex;gap:4px;}
+.nav-link{background:none;border:none;cursor:pointer;padding:8px 18px;border-radius:24px;font-family:var(--font-body);font-size:13px;color:var(--muted);transition:.2s;}
+.nav-link:hover{color:var(--text);}
+.nav-link.active{color:var(--gold);background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.15);}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.nav-points{display:flex;align-items:center;gap:6px;background:var(--surface2);padding:7px 16px;border-radius:22px;border:1px solid var(--border2);font-size:13px;color:var(--gold);font-weight:600;}
+.nav-user{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;border:2px solid transparent;transition:.2s;}
+.nav-user:hover{border-color:var(--gold);}
+
+/* TOAST */
+#toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);padding:13px 28px;border-radius:32px;font-size:13px;font-weight:500;z-index:9999;pointer-events:none;display:none;white-space:nowrap;}
+#toast.show{display:block;animation:toastIn 3.2s ease forwards;}
+#toast.success{background:rgba(6,214,160,0.12);border:1px solid rgba(6,214,160,0.4);color:var(--green);}
+#toast.error{background:rgba(255,77,109,0.12);border:1px solid rgba(255,77,109,0.4);color:var(--red);}
+#toast.info{background:rgba(240,180,41,0.12);border:1px solid rgba(240,180,41,0.35);color:var(--gold);}
+
+/* LANDING */
+#page-landing{padding-top:0;}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:100px 24px 60px;position:relative;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(240,180,41,0.07) 0%,transparent 65%),radial-gradient(ellipse 40% 40% at 20% 80%,rgba(76,201,240,0.05) 0%,transparent 60%),radial-gradient(ellipse 40% 40% at 80% 20%,rgba(199,125,255,0.05) 0%,transparent 60%);pointer-events:none;}
+.hero-film-strip{position:absolute;top:0;left:0;right:0;height:6px;background:repeating-linear-gradient(90deg,var(--gold) 0,var(--gold) 18px,transparent 18px,transparent 30px);opacity:.35;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.22);padding:7px 20px;border-radius:30px;font-size:12px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:28px;animation:fadeIn 1s ease both;}
+.hero h1{font-family:var(--font-display);font-size:clamp(3rem,8vw,7rem);font-weight:900;line-height:1.0;margin-bottom:22px;animation:slideUp .8s ease .2s both;}
+.hero h1 .line2{display:block;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-desc{max-width:560px;color:var(--muted);font-size:17px;line-height:1.7;margin-bottom:40px;animation:slideUp .8s ease .35s both;}
+.hero-ctas{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;animation:slideUp .8s ease .5s both;}
+.btn-hero-primary{padding:16px 40px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07070f;font-family:var(--font-body);font-weight:700;font-size:15px;border:none;cursor:pointer;transition:.25s;box-shadow:0 6px 30px rgba(240,180,41,0.3);}
+.btn-hero-primary:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(240,180,41,0.45);}
+.btn-hero-ghost{padding:16px 40px;border-radius:14px;background:transparent;color:var(--text);font-family:var(--font-body);font-weight:600;font-size:15px;border:1px solid var(--border2);cursor:pointer;transition:.25s;}
+.btn-hero-ghost:hover{border-color:var(--gold);color:var(--gold);}
+.hero-stats{display:flex;gap:48px;margin-top:64px;animation:slideUp .8s ease .65s both;flex-wrap:wrap;justify-content:center;}
+.h-stat-num{font-family:var(--font-display);font-size:2.4rem;font-weight:900;color:var(--gold);display:block;}
+.h-stat-lbl{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.hero-scroll{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-size:11px;letter-spacing:2px;text-transform:uppercase;animation:float 2.5s ease infinite;}
+.reel{position:absolute;font-size:3rem;opacity:.06;animation:float 6s ease infinite;pointer-events:none;}
+
+/* SECTIONS */
+.section-eyebrow{text-align:center;margin-bottom:14px;}
+.section-eyebrow span{display:inline-block;background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.2);padding:6px 18px;border-radius:22px;font-size:11px;color:var(--gold);letter-spacing:3px;text-transform:uppercase;}
+.section-title{font-family:var(--font-display);font-size:clamp(2rem,4vw,3.2rem);font-weight:900;text-align:center;margin-bottom:14px;line-height:1.2;}
+.section-sub{text-align:center;color:var(--muted);font-size:15px;max-width:480px;margin:0 auto 60px;}
+
+/* FEATURES */
+.features{padding:100px 24px;max-width:1200px;margin:0 auto;}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;}
+.feature-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px 28px;transition:.3s;position:relative;overflow:hidden;}
+.feature-card:hover{transform:translateY(-6px);border-color:var(--accent-color,var(--gold));box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.f-icon{font-size:2.4rem;margin-bottom:18px;display:block;}
+.f-title{font-family:var(--font-display);font-size:1.3rem;font-weight:700;margin-bottom:10px;}
+.f-desc{color:var(--muted);font-size:13.5px;line-height:1.7;}
+
+/* MINI MOVIES ROW */
+.mini-movie-row{display:flex;gap:16px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none;}
+.mini-movie-row::-webkit-scrollbar{display:none;}
+.mini-movie-card{min-width:160px;background:var(--surface);border-radius:14px;border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:.3s;flex-shrink:0;}
+.mini-movie-card:hover{transform:translateY(-5px);border-color:var(--gold);}
+.mini-poster{height:120px;display:flex;align-items:center;justify-content:center;font-size:52px;}
+.mini-info{padding:10px 12px;}
+.mini-title{font-size:12px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mini-genre{font-size:10px;color:var(--muted);}
+
+/* TESTIMONIALS */
+.testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:50px;}
+.testi-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;transition:.3s;}
+.testi-card:hover{border-color:var(--border2);transform:translateY(-4px);}
+.testi-stars{color:var(--gold);font-size:14px;margin-bottom:14px;}
+.testi-text{color:#c0c0e0;font-size:14px;line-height:1.75;margin-bottom:18px;font-style:italic;}
+.testi-author{display:flex;align-items:center;gap:10px;}
+.testi-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+
+/* FOOTER */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:60px 32px 32px;margin-top:40px;}
+.footer-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px;}
+.footer-col h4{font-family:var(--font-display);font-size:1rem;font-weight:700;margin-bottom:16px;}
+.footer-col li{margin-bottom:10px;font-size:13px;color:var(--muted);cursor:pointer;list-style:none;transition:.2s;}
+.footer-col li:hover{color:var(--gold);}
+.footer-bottom{max-width:1200px;margin:0 auto;border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--muted);}
+
+/* APP NAV */
+#app-nav{position:sticky;top:0;z-index:400;background:rgba(7,7,15,0.94);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:66px;}
+.app-tabs{display:flex;gap:3px;}
+.app-tab{background:none;border:none;cursor:pointer;padding:8px 14px;border-radius:22px;font-family:var(--font-body);font-size:12px;color:var(--muted);transition:.2s;white-space:nowrap;}
+.app-tab:hover{color:var(--text);}
+.app-tab.active{color:var(--gold);background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.18);}
+
+/* CONTAINERS */
+.container{max-width:1200px;margin:0 auto;padding:32px 24px;}
+.container-sm{max-width:720px;margin:0 auto;padding:32px 24px;}
+.container-md{max-width:900px;margin:0 auto;padding:32px 24px;}
+
+/* FILTERS */
+.filters-bar{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 24px;margin-bottom:28px;display:flex;flex-direction:column;gap:16px;}
+.filter-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.filter-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;min-width:66px;}
+.search-box{flex:1;min-width:200px;position:relative;}
+.search-box input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:11px;padding:11px 14px 11px 40px;color:var(--text);font-family:var(--font-body);font-size:14px;transition:.2s;}
+.search-box input:focus{border-color:var(--gold);outline:none;}
+.search-box input::placeholder{color:var(--muted);}
+.search-box .s-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none;}
+.chip-row{display:flex;gap:7px;flex-wrap:wrap;}
+.chip{padding:7px 14px;border-radius:22px;font-size:11px;font-weight:500;background:var(--surface2);color:var(--muted);border:1px solid var(--border2);cursor:pointer;transition:.2s;}
+.chip:hover{color:var(--text);}
+.chip.active{font-weight:700;border-color:transparent;}
+.chip.gold.active{background:var(--gold);color:#07070f;}
+.chip.blue.active{background:var(--blue);color:#07070f;}
+.chip.purple.active{background:var(--purple);color:#07070f;}
+
+/* ── MOVIE THUMBNAIL CARD (new design) ── */
+.movies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:22px;}
+.movie-card{background:var(--surface);border-radius:20px;border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:.3s;animation:scaleIn .4s ease both;}
+.movie-card:hover{transform:translateY(-6px);border-color:var(--border2);box-shadow:0 18px 55px rgba(0,0,0,0.55);}
+
+/* THUMBNAIL */
+.m-thumb{position:relative;height:210px;overflow:hidden;}
+.m-thumb-bg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:90px;transition:transform .4s;}
+.movie-card:hover .m-thumb-bg{transform:scale(1.07);}
+.m-thumb-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(7,7,15,0.92) 100%);}
+.m-thumb-badges{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-start;}
+.m-badge-left{display:flex;flex-direction:column;gap:5px;}
+.mbadge{display:inline-flex;align-items:center;gap:4px;background:rgba(7,7,15,0.82);backdrop-filter:blur(6px);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,0.08);}
+.mbadge.score{color:var(--gold);}
+.mbadge.rating{color:#ccc;}
+.mbadge.lang{color:var(--blue);}
+.m-wishlist-btn{background:rgba(7,7,15,0.82);border:none;border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;backdrop-filter:blur(6px);}
+.m-wishlist-btn:hover{transform:scale(1.2);}
+.m-thumb-bottom{position:absolute;bottom:10px;left:14px;right:14px;display:flex;gap:5px;flex-wrap:wrap;}
+
+.m-info{padding:16px;}
+.m-title{font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:6px;line-height:1.3;}
+.m-tags{display:flex;gap:6px;margin-bottom:9px;flex-wrap:wrap;}
+.m-tag{padding:3px 10px;border-radius:18px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.m-meta{display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--muted);}
+.m-desc{color:var(--muted);font-size:12.5px;line-height:1.65;margin-bottom:10px;}
+.m-lang-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
+.m-lang{padding:3px 9px;border-radius:14px;font-size:10px;background:rgba(76,201,240,0.1);color:var(--blue);border:1px solid rgba(76,201,240,0.2);font-weight:500;}
+.btn-book{width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07070f;font-family:var(--font-body);font-weight:700;font-size:13px;border:none;cursor:pointer;transition:.2s;}
+.btn-book:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(240,180,41,0.4);}
+
+/* BACK BTN */
+.back-btn{background:var(--surface);border:1px solid var(--border2);color:var(--muted);padding:9px 20px;border-radius:22px;font-family:var(--font-body);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;margin-bottom:24px;transition:.2s;}
+.back-btn:hover{color:var(--text);border-color:var(--muted);}
+
+/* ── DETAIL PAGE ── */
+.detail-thumb{width:100%;height:320px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:130px;border:1px solid var(--border);position:relative;overflow:hidden;}
+.detail-thumb-emoji{position:relative;z-index:2;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.6));}
+.detail-grid{display:grid;grid-template-columns:300px 1fr;gap:36px;margin-bottom:36px;}
+.d-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.d-badge{padding:5px 14px;border-radius:22px;font-size:12px;font-weight:600;border:1px solid;}
+.d-title{font-family:var(--font-display);font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;margin-bottom:12px;line-height:1.2;}
+.d-meta-row{display:flex;gap:18px;margin-bottom:14px;font-size:13px;color:var(--muted);flex-wrap:wrap;}
+.d-desc{color:#c0c0e0;font-size:14px;line-height:1.8;margin-bottom:18px;}
+
+/* CAST/CREW SECTION */
+.crew-section{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;margin-bottom:24px;}
+.crew-section h3{font-family:var(--font-display);font-size:1.3rem;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.cast-scroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;}
+.cast-scroll::-webkit-scrollbar{display:none;}
+.cast-card{min-width:110px;max-width:110px;text-align:center;flex-shrink:0;}
+.cast-avatar{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;border:2px solid var(--border2);transition:.2s;}
+.cast-card:hover .cast-avatar{border-color:var(--gold);transform:scale(1.05);}
+.cast-name{font-size:12px;font-weight:600;margin-bottom:3px;line-height:1.3;}
+.cast-role{font-size:10px;color:var(--muted);}
+.crew-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:16px;}
+.crew-item{background:var(--surface2);border-radius:12px;padding:14px;border:1px solid var(--border);}
+.crew-role{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
+.crew-name{font-size:13px;font-weight:600;}
+
+/* PRICING */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px;}
+.price-card{background:var(--surface2);border:1px solid var(--border2);border-radius:16px;padding:20px;text-align:center;transition:.2s;}
+.price-card:hover{border-color:var(--gold);}
+.pc-icon{font-size:26px;margin-bottom:10px;}
+.pc-name{font-family:var(--font-display);font-size:1rem;font-weight:700;margin-bottom:4px;}
+.pc-sub{color:var(--muted);font-size:11px;margin-bottom:12px;}
+.pc-amount{color:var(--gold);font-weight:700;font-size:18px;}
+.pc-perks{font-size:10px;color:var(--green);margin-top:6px;}
+
+/* LANG / DATE / TIME */
+.lang-section{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:24px;}
+.lang-section h3{font-family:var(--font-display);font-size:1.2rem;margin-bottom:16px;}
+.lang-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+.lang-option{padding:14px 16px;border-radius:14px;background:var(--surface2);border:2px solid var(--border2);cursor:pointer;transition:.2s;}
+.lang-option:hover{border-color:var(--muted);}
+.lang-option.active{border-color:var(--blue);background:rgba(76,201,240,0.07);}
+.lang-option .l-name{font-weight:600;font-size:14px;}
+.lang-option .l-format{font-size:11px;color:var(--muted);}
+.lang-option.active .l-name{color:var(--blue);}
+.section-h{font-family:var(--font-display);font-size:1.2rem;font-weight:700;margin-bottom:14px;}
+.pill-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;}
+.pill{padding:10px 20px;border-radius:12px;font-family:var(--font-body);font-size:13px;background:var(--surface2);color:var(--muted);border:1px solid var(--border2);cursor:pointer;transition:.2s;}
+.pill:hover{color:var(--text);border-color:var(--muted);}
+.pill.active{background:var(--gold);color:#07070f;border-color:var(--gold);font-weight:700;}
+
+/* SEAT MAP */
+.screen-wrap{text-align:center;margin-bottom:28px;}
+.screen-line{width:72%;height:5px;background:linear-gradient(90deg,transparent,rgba(240,180,41,0.5),var(--gold),rgba(240,180,41,0.5),transparent);border-radius:4px;margin:0 auto 8px;}
+.screen-text{color:#444;font-size:11px;letter-spacing:5px;text-transform:uppercase;}
+.seat-grid-wrap{overflow-x:auto;padding-bottom:10px;}
+.seat-row-map{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:7px;}
+.row-lbl{width:22px;text-align:center;color:var(--muted);font-size:11px;flex-shrink:0;}
+.seat{width:30px;height:26px;border-radius:6px 6px 0 0;border:none;cursor:pointer;flex-shrink:0;transition:transform .15s,box-shadow .15s;}
+.seat:not(.taken):hover{transform:scale(1.18);}
+.seat.standard{background:#1a1a32;border:1px solid #32325a;}
+.seat.premium{background:#0e1e32;border:1px solid #1e4a7a;}
+.seat.vip{background:#0e2818;border:1px solid #1e5a30;}
+.seat.taken{background:#16162a;border:1px solid #1e1e38;cursor:not-allowed;opacity:.3;}
+.seat.selected{background:var(--gold)!important;border:1px solid var(--gold)!important;box-shadow:0 0 14px rgba(240,180,41,.6);}
+.seat-gap{width:16px;flex-shrink:0;}
+.seat-legend{display:flex;justify-content:center;gap:22px;margin:22px 0 26px;flex-wrap:wrap;}
+.sl-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.sl-swatch{width:20px;height:17px;border-radius:3px 3px 0 0;}
+
+/* ORDER SUMMARY */
+.order-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;margin-bottom:22px;}
+.order-box h3{font-family:var(--font-display);font-size:1.2rem;margin-bottom:16px;}
+.chosen-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;}
+.c-tag{background:rgba(240,180,41,0.1);color:var(--gold);border:1px solid rgba(240,180,41,0.28);padding:5px 13px;border-radius:20px;font-size:12px;}
+.bill-row{display:flex;justify-content:space-between;margin-bottom:9px;font-size:14px;}
+.bill-row .bl{color:var(--muted);}
+.bill-divider{border:none;border-top:1px solid var(--border);margin:14px 0;}
+.bill-total{display:flex;justify-content:space-between;font-family:var(--font-display);font-size:1.4rem;font-weight:900;color:var(--gold);}
+.convenience-note{font-size:11px;color:var(--muted);margin-top:12px;padding:10px 14px;background:var(--surface2);border-radius:10px;border-left:3px solid var(--gold);}
+.offer-chips{display:flex;gap:9px;flex-wrap:wrap;}
+.offer-chip{padding:8px 16px;border-radius:22px;background:rgba(240,180,41,0.08);color:var(--gold);border:1px solid rgba(240,180,41,0.22);font-size:11px;font-weight:600;cursor:pointer;transition:.2s;}
+.offer-chip:hover{background:rgba(240,180,41,0.16);}
+.offer-chip.applied{background:var(--gold);color:#07070f;}
+
+/* CTA */
+.cta-btn{padding:15px 44px;border-radius:14px;font-family:var(--font-body);font-weight:700;font-size:15px;border:none;cursor:pointer;transition:.25s;}
+.cta-btn.primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07070f;box-shadow:0 4px 20px rgba(240,180,41,.25);}
+.cta-btn.primary:hover{transform:translateY(-2px);box-shadow:0 10px 35px rgba(240,180,41,.4);}
+.cta-btn.disabled{background:var(--surface2);color:#444;cursor:not-allowed;}
+.cta-btn.full{width:100%;}
+
+/* ══════════════════════════ PAYMENT PAGE ══════════════════════════ */
+.pay-layout{display:grid;grid-template-columns:1fr 380px;gap:28px;align-items:start;}
+.pay-left h2{font-family:var(--font-display);font-size:1.8rem;margin-bottom:22px;}
+.pay-section{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:18px;}
+.pay-section h4{font-family:var(--font-display);font-size:1.1rem;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.pay-methods{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+.pay-method{padding:14px 16px;border-radius:12px;background:var(--surface2);border:2px solid var(--border2);cursor:pointer;display:flex;align-items:center;gap:10px;transition:.2s;}
+.pay-method:hover{border-color:var(--muted);}
+.pay-method.active{border-color:var(--gold);background:rgba(240,180,41,0.06);}
+.pay-method .pm-icon{font-size:22px;}
+.pay-method .pm-name{font-size:13px;font-weight:600;}
+.pay-method .pm-sub{font-size:10px;color:var(--muted);}
+.pay-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:11px;padding:13px 16px;color:var(--text);font-family:var(--font-body);font-size:14px;margin-bottom:12px;transition:.2s;}
+.pay-input:focus{border-color:var(--gold);outline:none;}
+.pay-input::placeholder{color:var(--muted);}
+.pay-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.upi-row{display:flex;gap:10px;flex-wrap:wrap;}
+.upi-app{padding:10px 18px;border-radius:11px;background:var(--surface2);border:2px solid var(--border2);cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;transition:.2s;}
+.upi-app:hover{border-color:var(--muted);}
+.upi-app.active{border-color:var(--green);color:var(--green);background:rgba(6,214,160,0.06);}
+
+/* ORDER SIDEBAR */
+.order-sidebar{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;position:sticky;top:80px;}
+.os-movie-head{display:flex;gap:14px;align-items:center;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--border);}
+.os-thumb{width:58px;height:58px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.os-title{font-family:var(--font-display);font-size:1rem;font-weight:700;margin-bottom:4px;}
+.os-sub{font-size:11px;color:var(--muted);line-height:1.6;}
+.os-row{display:flex;justify-content:space-between;margin-bottom:9px;font-size:13px;}
+.os-row .ol{color:var(--muted);}
+.os-total{display:flex;justify-content:space-between;font-family:var(--font-display);font-size:1.3rem;font-weight:900;color:var(--gold);padding-top:14px;border-top:2px solid var(--border);}
+.secure-badge{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-top:14px;padding:10px;background:var(--surface2);border-radius:10px;}
+
+/* CONFIRMATION */
+.confirm-wrap{max-width:600px;margin:0 auto;padding:44px 24px;text-align:center;}
+.confetti-icon{font-size:72px;margin-bottom:18px;animation:pulse 1.2s ease 4;}
+.c-title{font-family:var(--font-display);font-size:2.2rem;font-weight:900;margin-bottom:8px;}
+.c-sub{color:var(--muted);font-size:14.5px;margin-bottom:32px;}
+.ticket{background:var(--surface);border-radius:24px;overflow:hidden;margin-bottom:28px;border:1px solid var(--border2);}
+.ticket-banner{height:100px;display:flex;align-items:center;justify-content:center;font-size:56px;position:relative;}
+.ticket-banner-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent,rgba(13,13,31,0.7));}
+.ticket-body{padding:22px 26px;}
+.t-movie-head{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:18px;border-bottom:2px dashed var(--border2);}
+.t-row{display:flex;justify-content:space-between;margin-bottom:11px;font-size:13px;}
+.t-row .tl{color:var(--muted);}
+.t-row .tr{font-weight:500;text-align:right;max-width:56%;}
+.ticket-footer{padding:16px 26px;background:var(--surface2);display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);}
+.tf-text{font-size:13px;color:var(--green);font-weight:500;}
+.qr-box{background:var(--surface2);border:1px solid var(--border2);border-radius:16px;padding:22px;text-align:center;margin-bottom:18px;}
+.qr-code{width:120px;height:120px;background:white;border-radius:12px;margin:0 auto 12px;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);gap:2px;padding:8px;}
+.qr-cell{border-radius:2px;}
+
+/* WISHLIST */
+.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;}
+.wl-card{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden;transition:.3s;}
+.wl-card:hover{transform:translateY(-4px);border-color:var(--border2);}
+.wl-poster{height:140px;display:flex;align-items:center;justify-content:center;font-size:60px;}
+.wl-info{padding:14px 16px;}
+.wl-btns{display:flex;gap:8px;margin-top:10px;}
+.wl-btn{flex:1;padding:9px;border-radius:10px;font-family:var(--font-body);font-size:12px;font-weight:700;border:none;cursor:pointer;transition:.2s;}
+.wl-btn.book{background:var(--gold);color:#07070f;}
+.wl-btn.del{background:var(--surface2);color:var(--red);border:1px solid var(--border2);}
+
+/* BOOKINGS */
+.booking-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px;display:flex;gap:16px;align-items:flex-start;transition:.2s;}
+.booking-card:hover{border-color:var(--border2);}
+.bc-poster{font-size:34px;width:56px;height:56px;background:var(--surface2);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bc-info h4{font-family:var(--font-display);font-size:15px;margin-bottom:5px;}
+.bc-meta{color:var(--muted);font-size:12px;line-height:1.9;}
+.bc-right{margin-left:auto;text-align:right;flex-shrink:0;}
+.confirmed-badge{padding:5px 14px;border-radius:22px;font-size:11px;font-weight:600;background:rgba(6,214,160,.1);color:var(--green);border:1px solid rgba(6,214,160,.25);}
+.bc-id{font-size:11px;color:var(--muted);margin-top:5px;font-family:monospace;}
+.bc-total{font-size:14px;color:var(--gold);font-weight:700;margin-top:7px;}
+
+/* PROFILE */
+.p-avatar{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px;box-shadow:0 8px 30px rgba(240,180,41,0.3);}
+.p-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+.p-stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;}
+.ps-icon{font-size:22px;margin-bottom:8px;}
+.ps-val{font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:var(--gold);}
+.ps-lbl{color:var(--muted);font-size:11px;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;}
+.tier-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;margin-bottom:22px;}
+.tier-row{display:flex;align-items:center;gap:18px;margin-bottom:18px;}
+.tier-name{font-weight:700;font-size:17px;color:var(--gold);}
+.tier-sub{color:var(--muted);font-size:12px;margin-top:3px;}
+.progress-track{background:var(--surface2);border-radius:999px;height:10px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold3));border-radius:999px;transition:width 1.3s cubic-bezier(.22,1,.36,1);}
+.prefs-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;}
+.prefs-card h3{font-family:var(--font-display);font-size:1.2rem;margin-bottom:16px;}
+.pref-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.pref-row:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.pref-lbl{font-size:14px;font-weight:500;}
+.pref-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.toggle{width:46px;height:26px;border-radius:13px;background:var(--surface2);border:1px solid var(--border2);cursor:pointer;position:relative;transition:.3s;}
+.toggle.on{background:var(--green);border-color:var(--green);}
+.toggle::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+.toggle.on::after{left:22px;}
+
+/* UPCOMING */
+.upcoming-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:.3s;}
+.upcoming-card:hover{transform:translateY(-5px);box-shadow:0 16px 50px rgba(0,0,0,0.5);}
+.up-thumb{height:155px;display:flex;align-items:center;justify-content:center;font-size:70px;position:relative;}
+.up-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(7,7,15,0.88) 100%);}
+.up-lang-badge{position:absolute;top:10px;left:12px;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700;}
+.up-hype-badge{position:absolute;top:10px;right:12px;background:rgba(7,7,15,0.85);padding:4px 11px;border-radius:20px;font-size:11px;color:var(--muted);}
+.up-date{position:absolute;bottom:10px;left:12px;font-size:11px;font-weight:700;color:var(--gold);}
+.up-body{padding:16px;}
+.up-hype-bar{height:5px;background:var(--surface2);border-radius:999px;overflow:hidden;margin:10px 0 5px;}
+.up-hype-fill{height:100%;border-radius:999px;transition:width 1s ease;}
+.remind-btn{width:100%;margin-top:12px;padding:10px;border-radius:11px;font-family:var(--font-body);font-size:12px;font-weight:700;cursor:pointer;transition:.2s;border:1px solid;}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:70px 0;color:var(--muted);}
+.empty-icon{font-size:54px;margin-bottom:14px;display:block;}
+
+@media(max-width:900px){
+  .pay-layout{grid-template-columns:1fr;}
+  .order-sidebar{position:static;}
+  .detail-grid{grid-template-columns:1fr;}
+}
+@media(max-width:700px){
+  .pricing-grid{grid-template-columns:1fr 1fr;}
+  .p-stats{grid-template-columns:1fr 1fr;}
+  .footer-grid{grid-template-columns:1fr 1fr;}
+  #app-nav{padding:0 10px;}
+  .app-tab{padding:7px 8px;font-size:11px;}
+  .pay-methods{grid-template-columns:1fr;}
+}
+@media(max-width:480px){
+  .pricing-grid{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr;}
+  .nav-links{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- LANDING NAVBAR -->
+<nav id="navbar">
+  <div class="logo" onclick="goToApp()">
+    <span class="logo-icon">🎬</span>
+    <div><span class="logo-text">CinéVerse</span><span class="logo-sub">Cinema Redefined</span></div>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="scrollToSec('hero')">Home</button>
+    <button class="nav-link" onclick="scrollToSec('features-sec')">Features</button>
+    <button class="nav-link" onclick="scrollToSec('now-showing')">Now Showing</button>
+    <button class="nav-link" onclick="goToApp();switchTab('upcoming')">Coming Soon</button>
+    <button class="nav-link" onclick="goToApp()">Book Tickets</button>
+  </div>
+  <div class="nav-right">
+    <div class="nav-points">⭐ <span id="landing-pts">1240</span> pts</div>
+    <div class="nav-user" onclick="goToApp();switchTab('profile')">👤</div>
+  </div>
+</nav>
+
+<div id="toast"></div>
+
+<!-- ══════════════════════════ LANDING ══════════════════════════ -->
+<div class="page active" id="page-landing">
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-film-strip"></div>
+    <span class="reel" style="top:15%;left:8%">🎞️</span>
+    <span class="reel" style="top:22%;right:9%;font-size:2rem;animation-delay:1.5s">🎭</span>
+    <span class="reel" style="bottom:28%;left:6%;font-size:2.5rem;animation-delay:3s">🎪</span>
+    <span class="reel" style="bottom:22%;right:7%;animation-delay:2s">🎬</span>
+    <div class="hero-eyebrow">🌟 India's Premier Ticket Platform</div>
+    <h1>Experience Cinema<br><span class="line2">Like Never Before</span></h1>
+    <p class="hero-desc">Book tickets for Bollywood, Hollywood, Kollywood & Tollywood blockbusters. Multiple languages, premium seating, zero hassle.</p>
+    <div class="hero-ctas">
+      <button class="btn-hero-primary" onclick="goToApp()">🎟️ Book Now</button>
+      <button class="btn-hero-ghost" onclick="scrollToSec('now-showing')">Now Showing ↓</button>
+    </div>
+    <div class="hero-stats">
+      <div class="h-stat"><span class="h-stat-num">50+</span><span class="h-stat-lbl">Movies</span></div>
+      <div class="h-stat"><span class="h-stat-num">200+</span><span class="h-stat-lbl">Theatres</span></div>
+      <div class="h-stat"><span class="h-stat-num">4</span><span class="h-stat-lbl">Languages</span></div>
+      <div class="h-stat"><span class="h-stat-num">2M+</span><span class="h-stat-lbl">Users</span></div>
+    </div>
+    <div class="hero-scroll">▼ scroll</div>
+  </section>
+
+  <section class="features" id="features-sec">
+    <div class="section-eyebrow"><span>Why CinéVerse</span></div>
+    <h2 class="section-title">Everything You Need</h2>
+    <p class="section-sub">From choosing language to picking your seat — every detail covered.</p>
+    <div class="features-grid">
+      <div class="feature-card" style="--accent-color:#f0b429"><span class="f-icon">🌐</span><div class="f-title">4 Languages</div><div class="f-desc">Watch in Hindi, English, Tamil or Telugu. Dubbed & subtitled versions available.</div></div>
+      <div class="feature-card" style="--accent-color:#4cc9f0"><span class="f-icon">💺</span><div class="f-title">Premium Seating</div><div class="f-desc">Standard, Premium or VIP recliners with interactive real-time seat map.</div></div>
+      <div class="feature-card" style="--accent-color:#06d6a0"><span class="f-icon">⭐</span><div class="f-title">CinéPoints</div><div class="f-desc">Earn points on every booking. Silver → Gold → Platinum rewards.</div></div>
+      <div class="feature-card" style="--accent-color:#c77dff"><span class="f-icon">💳</span><div class="f-title">Secure Payments</div><div class="f-desc">UPI, Cards, Net Banking — all with bank-grade encryption and instant confirmation.</div></div>
+      <div class="feature-card" style="--accent-color:#ff4d6d"><span class="f-icon">🎁</span><div class="f-title">Exclusive Offers</div><div class="f-desc">Bank discounts, combo deals and member-only coupons applied instantly.</div></div>
+      <div class="feature-card" style="--accent-color:#e8772a"><span class="f-icon">📱</span><div class="f-title">Instant E-Tickets</div><div class="f-desc">QR-code tickets delivered instantly. No printing, no queues, no stress.</div></div>
+    </div>
+  </section>
+
+  <section style="padding:60px 24px;max-width:1200px;margin:0 auto" id="now-showing">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:10px">
+      <div><div class="section-eyebrow" style="text-align:left;margin-bottom:8px"><span>In Theatres Now</span></div><h2 class="section-title" style="text-align:left;font-size:1.9rem;margin-bottom:0">Now Showing</h2></div>
+      <button class="btn-hero-ghost" style="padding:10px 22px;font-size:13px" onclick="goToApp()">See All →</button>
+    </div>
+    <div class="mini-movie-row" id="mini-movies"></div>
+  </section>
+
+  <section style="padding:60px 24px;max-width:1200px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:10px">
+      <div><div class="section-eyebrow" style="text-align:left;margin-bottom:8px"><span>🗓️ Releasing 2026</span></div><h2 class="section-title" style="text-align:left;font-size:1.9rem;margin-bottom:0">Upcoming Blockbusters</h2></div>
+      <button class="btn-hero-ghost" style="padding:10px 22px;font-size:13px" onclick="goToApp();switchTab('upcoming')">See All →</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px">
+      <div style="background:var(--surface);border-radius:18px;border:1px solid var(--border);padding:22px;cursor:pointer;transition:.3s" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='#f0b42960'" onmouseout="this.style.transform='';this.style.borderColor='var(--border)'" onclick="goToApp();switchTab('upcoming')">
+        <div style="font-size:40px;margin-bottom:12px">🎬</div><div style="font-size:11px;font-weight:700;color:#f0b429;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">Telugu · 4 Movies</div>
+        <h3 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:7px">Ustaad Bhagat Singh 2, Akhanda 2 & more</h3>
+        <p style="color:var(--muted);font-size:12px;line-height:1.65">Pawan Kalyan, Balakrishna — biggest Telugu stars returning in 2026.</p>
+      </div>
+      <div style="background:var(--surface);border-radius:18px;border:1px solid var(--border);padding:22px;cursor:pointer;transition:.3s" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='#ff4d6d60'" onmouseout="this.style.transform='';this.style.borderColor='var(--border)'" onclick="goToApp();switchTab('upcoming')">
+        <div style="font-size:40px;margin-bottom:12px">🎥</div><div style="font-size:11px;font-weight:700;color:#ff4d6d;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">Hindi · 4 Movies</div>
+        <h3 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:7px">War 2, Sikandar, Housefull 5 & more</h3>
+        <p style="color:var(--muted);font-size:12px;line-height:1.65">Hrithik, Salman, Akshay — Bollywood's biggest franchise sequels.</p>
+      </div>
+      <div style="background:var(--surface);border-radius:18px;border:1px solid var(--border);padding:22px;cursor:pointer;transition:.3s" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='#4cc9f060'" onmouseout="this.style.transform='';this.style.borderColor='var(--border)'" onclick="goToApp();switchTab('upcoming')">
+        <div style="font-size:40px;margin-bottom:12px">🎞️</div><div style="font-size:11px;font-weight:700;color:#4cc9f0;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">English · 4 Movies</div>
+        <h3 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:7px">Avengers: Doomsday, MI8, Superman & more</h3>
+        <p style="color:var(--muted);font-size:12px;line-height:1.65">Marvel, DC, Jurassic — Hollywood's most awaited franchises of 2026.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:60px 24px;max-width:1100px;margin:0 auto">
+    <div class="section-eyebrow"><span>What People Say</span></div>
+    <h2 class="section-title">Loved by Movie Fans</h2>
+    <div class="testi-grid">
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><div class="testi-text">"Finally a booking app that shows all languages for the same movie! Booked Kalki in Tamil and it was seamless."</div><div class="testi-author"><div class="testi-avatar" style="background:rgba(240,180,41,0.15)">😊</div><div><div style="font-weight:600;font-size:13px">Priya S.</div><div style="font-size:11px;color:var(--muted)">Chennai, Tamil Nadu</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><div class="testi-text">"The seat map is amazing — I could see exactly which seats were available. VIP row totally worth it!"</div><div class="testi-author"><div class="testi-avatar" style="background:rgba(76,201,240,0.12)">🙂</div><div><div style="font-weight:600;font-size:13px">Rahul M.</div><div style="font-size:11px;color:var(--muted)">Mumbai, Maharashtra</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★☆</div><div class="testi-text">"CinéPoints add up fast! Already reached Gold tier after 5 bookings. The loyalty program is genuinely good."</div><div class="testi-author"><div class="testi-avatar" style="background:rgba(199,125,255,0.12)">😄</div><div><div style="font-weight:600;font-size:13px">Ananya K.</div><div style="font-size:11px;color:var(--muted)">Hyderabad, Telangana</div></div></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-grid">
+      <div><div class="logo"><span class="logo-icon">🎬</span><span class="logo-text">CinéVerse</span></div><p style="color:var(--muted);font-size:13px;line-height:1.7;margin-top:12px;max-width:280px">India's most complete cinema booking experience. Movies in every language, for every taste.</p></div>
+      <div class="footer-col"><h4>Movies</h4><ul><li>Now Showing</li><li onclick="goToApp();switchTab('upcoming')" style="color:var(--gold)">Coming Soon ✨</li><li>Hindi Movies</li><li>Tamil Movies</li><li>Telugu Movies</li></ul></div>
+      <div class="footer-col"><h4>Help</h4><ul><li>FAQs</li><li>Booking Guide</li><li>Cancellations</li><li>Contact Us</li></ul></div>
+      <div class="footer-col"><h4>Company</h4><ul><li>About Us</li><li>Careers</li><li>Blog</li><li>Privacy Policy</li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2025 CinéVerse. All rights reserved.</span><span>Made with ❤️ for cinema lovers across India</span></div>
+  </footer>
+</div>
+
+<!-- ══════════════════════════ APP SHELL ══════════════════════════ -->
+<div class="page" id="page-app">
+  <div id="app-nav">
+    <div class="logo" onclick="showLanding()" style="cursor:pointer"><span class="logo-icon" style="font-size:18px">🎬</span><span class="logo-text" style="font-size:18px">CinéVerse</span></div>
+    <div class="app-tabs">
+      <button class="app-tab active" id="atab-browse" onclick="switchTab('browse')">🎥 Movies</button>
+      <button class="app-tab" id="atab-upcoming" onclick="switchTab('upcoming')">🗓️ Coming Soon</button>
+      <button class="app-tab" id="atab-wishlist" onclick="switchTab('wishlist')">❤️ Wishlist <span id="wl-cnt">(0)</span></button>
+      <button class="app-tab" id="atab-bookings" onclick="switchTab('bookings')">🎟️ Bookings</button>
+      <button class="app-tab" id="atab-profile" onclick="switchTab('profile')">👤 Profile</button>
+    </div>
+    <div class="nav-points">⭐ <span id="app-pts">1240</span> pts</div>
+  </div>
+  <div id="sub-browse" class="sub-page"></div>
+  <div id="sub-upcoming" class="sub-page" style="display:none"></div>
+  <div id="sub-detail" class="sub-page" style="display:none"></div>
+  <div id="sub-seats" class="sub-page" style="display:none"></div>
+  <div id="sub-payment" class="sub-page" style="display:none"></div>
+  <div id="sub-confirm" class="sub-page" style="display:none"></div>
+  <div id="sub-wishlist" class="sub-page" style="display:none"></div>
+  <div id="sub-bookings" class="sub-page" style="display:none"></div>
+  <div id="sub-profile" class="sub-page" style="display:none"></div>
+</div>
+
+<script>
+/* ═══════════════ DATA ═══════════════ */
+const LANGS={Hindi:[{fmt:'2D',icon:'🎞️'},{fmt:'3D',icon:'🌀'},{fmt:'IMAX',icon:'📽️'}],English:[{fmt:'2D',icon:'🎞️'},{fmt:'3D',icon:'🌀'},{fmt:'IMAX',icon:'📽️'}],Tamil:[{fmt:'2D',icon:'🎞️'},{fmt:'3D',icon:'🌀'}],Telugu:[{fmt:'2D',icon:'🎞️'},{fmt:'3D',icon:'🌀'}]};
+
+const MOVIES=[
+  {id:1,title:'Kalki 2898 AD',genre:'Sci-Fi',type:'Epic',rating:'U/A',score:8.8,duration:'2h 57m',
+   director:'Nag Ashwin',music:'Santhosh Narayanan',cinematography:'Djordje Stojiljkovic',production:'Vyjayanthi Movies',
+   cast:[{name:'Prabhas',role:'Kalki / SU-30',emoji:'⚡',bg:'#f0b42920'},{name:'Deepika Padukone',role:'Sumathi / Kalki\'s Mother',emoji:'🌸',bg:'#ff69b420'},{name:'Amitabh Bachchan',role:'Ashwatthama',emoji:'👴',bg:'#c0c0c020'},{name:'Kamal Haasan',role:'Supreme Yaskin',emoji:'🎭',bg:'#c77dff20'},{name:'Disha Patani',role:'Roxo',emoji:'💃',bg:'#ff4d6d20'},{name:'Saswata Chatterjee',role:'Shambhala Elder',emoji:'🧓',bg:'#4cc9f020'}],
+   desc:'Set in a dystopian future 2898 AD, a mythological warrior reborn as SU-30 protects the last hope of humanity against a tyrannical ruler.',
+   price:{standard:200,premium:320,vip:500},times:['10:00 AM','1:00 PM','4:30 PM','8:00 PM','11:15 PM'],poster:'⚡',color:'#f0b429',languages:['Hindi','Tamil','Telugu','English'],genres:['Sci-Fi','Action','Mythology']},
+  {id:2,title:'Devara: Part 1',genre:'Action',type:'Blockbuster',rating:'U/A',score:8.2,duration:'2h 46m',
+   director:'Koratala Siva',music:'Anirudh Ravichander',cinematography:'R. Rathnavelu',production:'Yuvasudha Arts',
+   cast:[{name:'Jr. NTR',role:'Devara / Vara',emoji:'🌊',bg:'#4cc9f020'},{name:'Janhvi Kapoor',role:'Thangam',emoji:'🌺',bg:'#ff69b420'},{name:'Saif Ali Khan',role:'Bhaira',emoji:'😈',bg:'#ff4d6d20'},{name:'Prakash Raj',role:'Village Elder',emoji:'🧔',bg:'#c0c0c020'},{name:'Shruti Haasan',role:'Supporting',emoji:'🎵',bg:'#c77dff20'}],
+   desc:'A feared sea pirate and his son navigate power, fear and legacy across generations in coastal South India.',
+   price:{standard:180,premium:290,vip:460},times:['9:30 AM','12:45 PM','4:00 PM','7:30 PM','10:45 PM'],poster:'🌊',color:'#4cc9f0',languages:['Telugu','Hindi','Tamil'],genres:['Action','Drama','Thriller']},
+  {id:3,title:'Pushpa 2: The Rule',genre:'Action',type:'Blockbuster',rating:'A',score:9.0,duration:'3h 22m',
+   director:'Sukumar',music:'Devi Sri Prasad',cinematography:'Miroslaw Kuba Brozek',production:'Mythri Movie Makers',
+   cast:[{name:'Allu Arjun',role:'Pushpa Raj',emoji:'🔥',bg:'#e8772a20'},{name:'Rashmika Mandanna',role:'Srivalli',emoji:'💐',bg:'#ff69b420'},{name:'Fahadh Faasil',role:'SP Bhanwar Singh Shekawat',emoji:'🚔',bg:'#4cc9f020'},{name:'Sunil',role:'Kesava',emoji:'😂',bg:'#f0b42920'},{name:'Anasuya Bharadwaj',role:'Dakshayani',emoji:'👸',bg:'#c77dff20'}],
+   desc:'Pushpa Raj expands his red sandalwood smuggling empire across borders and confronts the most dangerous cop the system has ever deployed.',
+   price:{standard:250,premium:400,vip:600},times:['10:30 AM','2:00 PM','6:00 PM','9:30 PM'],poster:'🔥',color:'#e8772a',languages:['Telugu','Hindi','Tamil'],genres:['Action','Crime','Drama']},
+  {id:4,title:'Stree 2',genre:'Horror Comedy',type:'Comedy',rating:'U/A',score:8.6,duration:'2h 10m',
+   director:'Amar Kaushik',music:'Sachin-Jigar',cinematography:'Amit Roy',production:'Maddock Films',
+   cast:[{name:'Rajkummar Rao',role:'Vicky',emoji:'😂',bg:'#c77dff20'},{name:'Shraddha Kapoor',role:'Stree',emoji:'👻',bg:'#c0c0c020'},{name:'Pankaj Tripathi',role:'Rudra',emoji:'🧙',bg:'#f0b42920'},{name:'Aparshakti Khurana',role:'Bittu',emoji:'😜',bg:'#4cc9f020'},{name:'Abhishek Banerjee',role:'Jana',emoji:'🤪',bg:'#ff4d6d20'}],
+   desc:'The spirit Stree returns to Chanderi with a new and more terrifying mission, while the gang tries to unravel her true identity.',
+   price:{standard:170,premium:270,vip:420},times:['11:00 AM','2:30 PM','6:00 PM','9:00 PM','11:30 PM'],poster:'👻',color:'#c77dff',languages:['Hindi'],genres:['Horror','Comedy','Supernatural']},
+  {id:5,title:'Fighter',genre:'Action',type:'Patriotic',rating:'U/A',score:7.9,duration:'2h 46m',
+   director:'Siddharth Anand',music:'Vishal-Shekhar',cinematography:'Satchith Paulose',production:'Marflix Pictures',
+   cast:[{name:'Hrithik Roshan',role:'Sqn. Ldr. Shamsher Pathania',emoji:'✈️',bg:'#ff8c4220'},{name:'Deepika Padukone',role:'Sqn. Ldr. Minal Rathore',emoji:'🪖',bg:'#ff69b420'},{name:'Anil Kapoor',role:'Air Vice Marshal Rakesh Jai Singh',emoji:'⭐',bg:'#f0b42920'},{name:'Karan Singh Grover',role:'Sqn. Ldr. Taj Ferozepur Dhillon',emoji:'🦅',bg:'#4cc9f020'}],
+   desc:"India's first aerial action franchise follows the Air Force's elite Patna Pirates in a daring cross-border mission to protect the nation.",
+   price:{standard:200,premium:320,vip:500},times:['10:00 AM','1:30 PM','5:00 PM','8:30 PM'],poster:'✈️',color:'#ff8c42',languages:['Hindi','English'],genres:['Action','Patriotic','Thriller']},
+  {id:6,title:'Interstellar Returns',genre:'Sci-Fi',type:'Hollywood',rating:'PG',score:9.3,duration:'2h 49m',
+   director:'Christopher Nolan',music:'Hans Zimmer',cinematography:'Hoyte van Hoytema',production:'Legendary Pictures',
+   cast:[{name:'Matthew McConaughey',role:'Cooper',emoji:'🚀',bg:'#06d6a020'},{name:'Anne Hathaway',role:'Brand',emoji:'🔭',bg:'#4cc9f020'},{name:'Jessica Chastain',role:'Murphy (adult)',emoji:'👩‍🔬',bg:'#c77dff20'},{name:'Michael Caine',role:'Professor Brand',emoji:'🎩',bg:'#c0c0c020'},{name:'Matt Damon',role:'Dr. Mann',emoji:'🧊',bg:'#ff4d6d20'}],
+   desc:'A visually stunning IMAX re-release of the space epic — exploring wormholes, time dilation and what it means to be human.',
+   price:{standard:280,premium:450,vip:700},times:['11:00 AM','3:00 PM','7:00 PM','10:30 PM'],poster:'🌌',color:'#06d6a0',languages:['English','Hindi'],genres:['Sci-Fi','Drama','Space']},
+  {id:7,title:'Vettaiyan',genre:'Thriller',type:'Tamil',rating:'U/A',score:8.1,duration:'2h 29m',
+   director:'T.J. Gnanavel',music:'Anirudh Ravichander',cinematography:'S.R. Kathir',production:'Lyca Productions',
+   cast:[{name:'Rajinikanth',role:'DIG Adhiseshan',emoji:'🎯',bg:'#ff4d6d20'},{name:'Amitabh Bachchan',role:'Retd. Justice',emoji:'⚖️',bg:'#c0c0c020'},{name:'Fahadh Faasil',role:'Villain',emoji:'😤',bg:'#4cc9f020'},{name:'Rana Daggubati',role:'Shaktivel',emoji:'💪',bg:'#f0b42920'},{name:'Manju Warrier',role:'Meena',emoji:'🌹',bg:'#ff69b420'}],
+   desc:"A veteran cop's unconventional methods of justice spark a philosophical debate — does the end justify the means?",
+   price:{standard:180,premium:290,vip:460},times:['9:00 AM','12:00 PM','3:30 PM','7:00 PM','10:30 PM'],poster:'🎯',color:'#ff4d6d',languages:['Tamil','Telugu','Hindi'],genres:['Thriller','Crime','Drama']},
+  {id:8,title:'Singham Again',genre:'Action',type:'Blockbuster',rating:'U/A',score:7.5,duration:'2h 32m',
+   director:'Rohit Shetty',music:'Pritam',cinematography:'Dudley',production:'Reliance Entertainment',
+   cast:[{name:'Ajay Devgn',role:'Bajirao Singham',emoji:'🚔',bg:'#f0b42920'},{name:'Kareena Kapoor',role:'Avni Singham',emoji:'👸',bg:'#ff69b420'},{name:'Ranveer Singh',role:'Simmba',emoji:'🦁',bg:'#ff4d6d20'},{name:'Deepika Padukone',role:'Shakti Shetty',emoji:'💥',bg:'#c77dff20'},{name:'Tiger Shroff',role:'Satya',emoji:'🥷',bg:'#4cc9f020'},{name:'Akshay Kumar',role:'Sooryavanshi',emoji:'☀️',bg:'#e8772a20'}],
+   desc:"The entire Cop Universe unites as Singham leads a daring mission to rescue his wife from a powerful crime lord's stronghold.",
+   price:{standard:190,premium:300,vip:480},times:['10:00 AM','1:15 PM','4:45 PM','8:15 PM','11:00 PM'],poster:'🚔',color:'#f0b429',languages:['Hindi','Tamil','Telugu'],genres:['Action','Drama','Cop Universe']},
+  {id:9,title:'Game Changer',genre:'Political',type:'Telugu',rating:'U/A',score:7.8,duration:'2h 34m',
+   director:'Shankar',music:'Thaman S',cinematography:'Tirru',production:'Sri Venkateswara Creations',
+   cast:[{name:'Ram Charan',role:'Appanna / Satya',emoji:'🗳️',bg:'#4cc9f020'},{name:'Kiara Advani',role:'Deepika',emoji:'🌺',bg:'#ff69b420'},{name:'S.J. Suryah',role:'Bobbili Mopidevi',emoji:'😈',bg:'#ff4d6d20'},{name:'Anjali',role:'Sree Divya',emoji:'💃',bg:'#c77dff20'},{name:'Jayaram',role:'Muralikrishna',emoji:'🧔',bg:'#c0c0c020'}],
+   desc:'An honest IAS officer battles a corrupt political dynasty through the electoral process — proving that one man can change the system.',
+   price:{standard:200,premium:320,vip:500},times:['9:30 AM','1:00 PM','4:30 PM','8:00 PM'],poster:'🗳️',color:'#4cc9f0',languages:['Telugu','Tamil','Hindi'],genres:['Political','Action','Drama']},
+  {id:10,title:'Dune: Part Three',genre:'Sci-Fi',type:'Hollywood',rating:'PG-13',score:9.1,duration:'2h 52m',
+   director:'Denis Villeneuve',music:'Hans Zimmer',cinematography:'Greig Fraser',production:'Legendary Pictures',
+   cast:[{name:'Timothée Chalamet',role:'Paul Atreides',emoji:'🏜️',bg:'#c8a96e20'},{name:'Zendaya',role:'Chani',emoji:'⭐',bg:'#ff69b420'},{name:'Austin Butler',role:'Feyd-Rautha',emoji:'⚔️',bg:'#ff4d6d20'},{name:'Florence Pugh',role:'Princess Irulan',emoji:'👑',bg:'#f0b42920'},{name:'Javier Bardem',role:'Stilgar',emoji:'🧔',bg:'#4cc9f020'}],
+   desc:"Paul Atreides leads the final holy war — an epic conclusion to the Dune saga spanning galaxies, prophecies and the true cost of power.",
+   price:{standard:300,premium:480,vip:750},times:['11:30 AM','3:00 PM','7:00 PM','10:30 PM'],poster:'🏜️',color:'#c8a96e',languages:['English','Hindi'],genres:['Sci-Fi','Epic','Adventure']},
+];
+
+const UPCOMING=[
+  {id:'u1',lang:'Telugu',title:'Sankranthiki Vasthunam 2',releaseDate:'Jan 2026',director:'Anil Ravipudi',cast:['Venkatesh','Aishwarya Rajesh','Meenakshi Chaudhary'],poster:'🎯',color:'#f0b429',genre:'Action Comedy',desc:'The hilarious detective duo returns with an even bigger case, more laughs and non-stop twists.',hype:95},
+  {id:'u2',lang:'Telugu',title:'Daaku Maharaaj 2',releaseDate:'Feb 2026',director:'Bobby Kolli',cast:['Nandamuri Balakrishna','Bobby Deol'],poster:'⚔️',color:'#e8772a',genre:'Action',desc:'The fearless outlaw returns — bigger, bolder and more unstoppable than ever before.',hype:88},
+  {id:'u3',lang:'Telugu',title:'Akhanda 2',releaseDate:'Mar 2026',director:'Boyapati Srinu',cast:['Nandamuri Balakrishna','Pragya Jaiswal'],poster:'🔱',color:'#ff4d6d',genre:'Mass Action',desc:'The spiritual warrior is back to vanquish evil forces threatening the region\'s peace.',hype:92},
+  {id:'u4',lang:'Telugu',title:'Ustaad Bhagat Singh 2',releaseDate:'Apr 2026',director:'Harish Shankar',cast:['Pawan Kalyan','Sreeleela'],poster:'🦁',color:'#c77dff',genre:'Action Drama',desc:'A high-octane sequel following the fearless hero as he battles new powerful enemies.',hype:97},
+  {id:'u5',lang:'Hindi',title:'War 2',releaseDate:'Jan 2026',director:'Ayan Mukerji',cast:['Hrithik Roshan','Jr. NTR','Kiara Advani'],poster:'💥',color:'#06d6a0',genre:'Action Thriller',desc:"India's deadliest agents clash in a globe-trotting action spectacle packed with stunts.",hype:98},
+  {id:'u6',lang:'Hindi',title:'Sikandar',releaseDate:'Eid 2026',director:'A.R. Murugadoss',cast:['Salman Khan','Rashmika Mandanna'],poster:'👑',color:'#f0b429',genre:'Action',desc:'A man driven by a code of justice takes on a corrupt empire in this explosive action film.',hype:94},
+  {id:'u7',lang:'Hindi',title:'Azaad',releaseDate:'Jan 2026',director:'Abhishek Kapoor',cast:['Aaman Devgan','Rasha Thadani','Ajay Devgn'],poster:'🐎',color:'#4cc9f0',genre:'Period Adventure',desc:'Set in pre-independence India, a young rebel and a spirited horse forge an unbreakable bond.',hype:82},
+  {id:'u8',lang:'Hindi',title:'Housefull 5',releaseDate:'Jun 2026',director:'Tarun Mansukhani',cast:['Akshay Kumar','Riteish Deshmukh','Bobby Deol'],poster:'🏠',color:'#ff4d6d',genre:'Comedy',desc:'The gang of lovable goons is back — double the confusion, triple the laughs.',hype:86},
+  {id:'u9',lang:'English',title:'Avengers: Doomsday',releaseDate:'May 2026',director:'Russo Brothers',cast:['Robert Downey Jr.','Chris Evans','Benedict Cumberbatch'],poster:'🦸',color:'#c77dff',genre:'Superhero',desc:'Original and new Avengers unite against the most catastrophic threat the multiverse has seen.',hype:100},
+  {id:'u10',lang:'English',title:'Mission: Impossible 8',releaseDate:'May 2026',director:'Christopher McQuarrie',cast:['Tom Cruise','Hayley Atwell','Simon Pegg'],poster:'💼',color:'#06d6a0',genre:'Action Thriller',desc:"Ethan Hunt faces his most personal and death-defying mission — one the IMF cannot sanction.",hype:96},
+  {id:'u11',lang:'English',title:'Jurassic World 4',releaseDate:'Jul 2026',director:'Gareth Edwards',cast:['Scarlett Johansson','Jonathan Bailey','Mahershala Ali'],poster:'🦕',color:'#4cc9f0',genre:'Adventure',desc:'A fresh chapter as prehistoric giants reclaim a world that has moved on without them.',hype:89},
+  {id:'u12',lang:'English',title:'Superman (2025)',releaseDate:'Jul 2026',director:'James Gunn',cast:['David Corenswet','Rachel Brosnahan','Nicholas Hoult'],poster:'🦸‍♂️',color:'#f0b429',genre:'Superhero',desc:"The DCU's new Superman balances his Kryptonian legacy and human upbringing.",hype:93},
+];
+
+const DATES=(()=>{const a=[];for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);a.push({label:i===0?'Today':i===1?'Tomorrow':d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'}),value:d.toDateString()});}return a;})();
+const OFFERS=[{code:'CINE20',label:'CINE20 — 20% off',pct:20},{code:'HDFC10',label:'HDFC Bank — ₹50 off',flat:50},{code:'FIRST50',label:'First Booking — ₹100 off',flat:100}];
+
+let S={movie:null,date:null,time:null,lang:null,format:null,seats:{},chosen:[],wishlist:[],bookings:[],reminders:[],user:{name:'Aryan Kapoor',points:1240},filter:{genre:'All',type:'All',lang:'All',search:''},appliedOffer:null,payMethod:'upi',upiApp:'gpay',toggles:{notifications:true,recommendations:true,newsletter:false},pendingBooking:null};
+const fmt=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+let toastTimer;
+
+function toast(msg,type='success'){const el=document.getElementById('toast');el.textContent=msg;el.className='show '+type;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.className='';},3400);}
+
+/* ── NAVIGATION ── */
+function showLanding(){document.getElementById('page-landing').classList.add('active');document.getElementById('page-app').classList.remove('active');document.getElementById('navbar').style.display='flex';}
+function goToApp(){document.getElementById('page-landing').classList.remove('active');document.getElementById('page-app').classList.add('active');document.getElementById('navbar').style.display='none';switchTab('browse');}
+function scrollToSec(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});}
+
+function switchTab(tab){
+  document.querySelectorAll('.app-tab').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('atab-'+tab);if(btn)btn.classList.add('active');
+  document.querySelectorAll('.sub-page').forEach(p=>p.style.display='none');
+  const sub=document.getElementById('sub-'+tab);if(sub){sub.style.display='block';sub.style.animation='fadeUp .35s ease both';}
+  if(tab==='browse')renderBrowse();
+  if(tab==='upcoming')renderUpcoming();
+  if(tab==='wishlist')renderWishlist();
+  if(tab==='bookings')renderBookings();
+  if(tab==='profile')renderProfile();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function showSub(name){document.querySelectorAll('.sub-page').forEach(p=>p.style.display='none');const el=document.getElementById('sub-'+name);if(el){el.style.display='block';el.style.animation='fadeUp .35s ease both';}window.scrollTo({top:0,behavior:'smooth'});}
+
+/* ── BROWSE ── */
+function renderBrowse(){
+  const genres=['All',...new Set(MOVIES.map(m=>m.genre))];
+  const types=['All',...new Set(MOVIES.map(m=>m.type))];
+  const langs=['All','Hindi','English','Tamil','Telugu'];
+  const filtered=MOVIES.filter(m=>{
+    const gs=S.filter.genre==='All'||m.genre===S.filter.genre;
+    const ts=S.filter.type==='All'||m.type===S.filter.type;
+    const ls=S.filter.lang==='All'||m.languages.includes(S.filter.lang);
+    const ss=m.title.toLowerCase().includes(S.filter.search.toLowerCase())||m.director.toLowerCase().includes(S.filter.search.toLowerCase());
+    return gs&&ts&&ls&&ss;
+  });
+  document.getElementById('sub-browse').innerHTML=`
+  <div class="container">
+    <div class="filters-bar">
+      <div class="filter-row"><span class="filter-label">Search</span><div class="search-box" style="flex:1"><span class="s-icon">🔍</span><input type="text" placeholder="Movie, director, genre..." value="${S.filter.search}" oninput="S.filter.search=this.value;renderBrowse()"/></div></div>
+      <div class="filter-row"><span class="filter-label">Genre</span><div class="chip-row">${genres.map(g=>`<button class="chip gold${S.filter.genre===g?' active':''}" onclick="S.filter.genre='${g}';renderBrowse()">${g}</button>`).join('')}</div></div>
+      <div class="filter-row"><span class="filter-label">Type</span><div class="chip-row">${types.map(t=>`<button class="chip blue${S.filter.type===t?' active':''}" onclick="S.filter.type='${t}';renderBrowse()">${t}</button>`).join('')}</div></div>
+      <div class="filter-row"><span class="filter-label">Language</span><div class="chip-row">${langs.map(l=>`<button class="chip purple${S.filter.lang===l?' active':''}" onclick="S.filter.lang='${l}';renderBrowse()">${l}</button>`).join('')}</div></div>
+    </div>
+    ${filtered.length===0?`<div class="empty-state"><span class="empty-icon">🎭</span><p>No movies match your filters.</p></div>`:`
+    <div class="movies-grid">
+      ${filtered.map((m,i)=>`
+        <div class="movie-card" style="animation-delay:${i*.06}s">
+          <div class="m-thumb">
+            <div class="m-thumb-bg" style="background:linear-gradient(135deg,${m.color}22,${m.color}55)" onclick="openDetail(${m.id})">${m.poster}</div>
+            <div class="m-thumb-overlay"></div>
+            <div class="m-thumb-badges">
+              <div class="m-badge-left"><span class="mbadge score">⭐ ${m.score}</span><span class="mbadge rating">${m.rating}</span></div>
+              <button class="m-wishlist-btn" onclick="event.stopPropagation();toggleWishlist(${m.id})">${S.wishlist.includes(m.id)?'❤️':'🤍'}</button>
+            </div>
+            <div class="m-thumb-bottom">${m.languages.map(l=>`<span class="mbadge lang">${l}</span>`).join('')}</div>
+          </div>
+          <div class="m-info">
+            <h3 class="m-title">${m.title}</h3>
+            <div class="m-tags">
+              <span class="m-tag" style="background:${m.color}18;color:${m.color};border:1px solid ${m.color}30">${m.genre}</span>
+              <span class="m-tag" style="background:rgba(76,201,240,0.1);color:var(--blue);border:1px solid rgba(76,201,240,0.2)">${m.type}</span>
+            </div>
+            <div class="m-meta"><span>⏱ ${m.duration}</span><span>🎬 ${m.director}</span></div>
+            <p class="m-desc">${m.desc.substring(0,85)}...</p>
+            <!-- MINI CAST AVATARS -->
+            <div style="display:flex;gap:6px;margin-bottom:13px;align-items:center">
+              ${m.cast.slice(0,4).map(c=>`<div title="${c.name} as ${c.role}" style="width:32px;height:32px;border-radius:50%;background:${c.bg};display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid var(--border2);flex-shrink:0">${c.emoji}</div>`).join('')}
+              ${m.cast.length>4?`<span style="font-size:11px;color:var(--muted);margin-left:4px">+${m.cast.length-4} more</span>`:''}
+            </div>
+            <button class="btn-book" onclick="openDetail(${m.id})">Book Tickets →</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`}
+  </div>`;
+}
+
+/* ── DETAIL ── */
+function openDetail(id){
+  S.movie=MOVIES.find(m=>m.id===id);
+  S.date=null;S.time=null;S.lang=null;S.format=null;S.chosen=[];S.appliedOffer=null;
+  S.seats=buildSeats();
+  renderDetail();
+  document.querySelectorAll('.app-tab').forEach(b=>b.classList.remove('active'));
+  showSub('detail');
+}
+
+function renderDetail(){
+  const m=S.movie;
+  const castHTML=m.cast.map(c=>`
+    <div class="cast-card">
+      <div class="cast-avatar" style="background:${c.bg};font-size:26px">${c.emoji}</div>
+      <div class="cast-name">${c.name}</div>
+      <div class="cast-role">${c.role}</div>
+    </div>`).join('');
+
+  document.getElementById('sub-detail').innerHTML=`
+  <div class="container-md" style="max-width:1000px">
+    <button class="back-btn" onclick="switchTab('browse')">← Back to Movies</button>
+
+    <!-- DETAIL HERO -->
+    <div class="detail-grid">
+      <div>
+        <div class="detail-thumb" style="background:linear-gradient(135deg,${m.color}18,${m.color}50)">
+          <span class="detail-thumb-emoji">${m.poster}</span>
+        </div>
+        <!-- THUMBNAIL STRIP -->
+        <div style="display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px">
+          ${(m.scenes||[{e:m.poster,label:'Poster'},{e:m.scene1||'🎬',label:'Scene 1'},{e:m.scene2||'🎥',label:'Scene 2'},{e:m.scene3||'🎞️',label:'Action'},{e:m.scene4||'⭐',label:'Climax'}]).map((s,i)=>`
+          <div onclick="document.getElementById('main-thumb').textContent=this.dataset.emoji;document.querySelectorAll('.thumb-strip-item').forEach(x=>x.style.borderColor='var(--border)');this.style.borderColor='${m.color}'"
+            data-emoji="${typeof s==='object'?s.e:s}"
+            class="thumb-strip-item"
+            style="min-width:72px;height:52px;border-radius:9px;background:linear-gradient(${135+i*30}deg,${m.color}${18+i*8},${m.color}${38+i*8});display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;border:2px solid ${i===0?m.color:'var(--border)'};cursor:pointer;flex-shrink:0;transition:.2s;position:relative;overflow:hidden" title="${typeof s==='object'?s.label:'Scene '+(i+1)}">
+            ${typeof s==='object'?s.e:s}
+            <span style="font-size:8px;color:rgba(255,255,255,0.7);position:absolute;bottom:3px;letter-spacing:.3px">${typeof s==='object'?s.label:'Scene '+(i+1)}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="d-badges">
+          <span class="d-badge" style="background:${m.color}18;color:${m.color};border-color:${m.color}35">${m.genre}</span>
+          <span class="d-badge" style="background:rgba(76,201,240,0.1);color:var(--blue);border-color:rgba(76,201,240,0.25)">${m.type}</span>
+          <span class="d-badge" style="background:var(--surface2);color:var(--muted);border-color:var(--border2)">${m.rating}</span>
+        </div>
+        <h1 class="d-title">${m.title}</h1>
+        <div class="d-meta-row">
+          <span>⭐ ${m.score}/10</span><span>⏱ ${m.duration}</span>
+          <span style="color:var(--gold)">🎵 ${m.music}</span>
+        </div>
+        <p class="d-desc">${m.desc}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-bottom:16px;font-size:13px">
+          <div><span style="color:var(--muted)">Director: </span>${m.director}</div>
+          <div><span style="color:var(--muted)">Music: </span>${m.music}</div>
+          <div><span style="color:var(--muted)">Camera: </span>${m.cinematography}</div>
+          <div><span style="color:var(--muted)">Production: </span>${m.production}</div>
+        </div>
+        <div class="m-lang-chips" style="gap:7px">${m.languages.map(l=>`<span class="m-lang" style="font-size:12px;padding:5px 14px">${l}</span>`).join('')}</div>
+      </div>
+    </div>
+
+    <!-- CAST & CREW -->
+    <div class="crew-section">
+      <h3>🎭 Cast & Characters</h3>
+      <div class="cast-scroll">${castHTML}</div>
+      <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border)">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px">Crew</div>
+        <div class="crew-grid">
+          <div class="crew-item"><div class="crew-role">Director</div><div class="crew-name">${m.director}</div></div>
+          <div class="crew-item"><div class="crew-role">Music Director</div><div class="crew-name">${m.music}</div></div>
+          <div class="crew-item"><div class="crew-role">Cinematography</div><div class="crew-name">${m.cinematography}</div></div>
+          <div class="crew-item"><div class="crew-role">Production House</div><div class="crew-name">${m.production}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICING -->
+    <div style="margin-bottom:24px">
+      <h3 class="section-h">Ticket Pricing</h3>
+      <div class="pricing-grid">
+        <div class="price-card"><div class="pc-icon">🪑</div><div class="pc-name">Standard</div><div class="pc-sub">Rows F–H · Basic</div><div class="pc-amount">${fmt(m.price.standard)}</div></div>
+        <div class="price-card"><div class="pc-icon">💺</div><div class="pc-name">Premium</div><div class="pc-sub">Rows C–E · Wide</div><div class="pc-amount">${fmt(m.price.premium)}</div><div class="pc-perks">✓ Extra legroom</div></div>
+        <div class="price-card"><div class="pc-icon">👑</div><div class="pc-name">VIP</div><div class="pc-sub">Rows A–B · Recliner</div><div class="pc-amount">${fmt(m.price.vip)}</div><div class="pc-perks">✓ F&B included</div></div>
+      </div>
+    </div>
+
+    <!-- LANGUAGE -->
+    <div class="lang-section">
+      <h3>Select Language & Format</h3>
+      <div class="lang-options">
+        ${m.languages.map(lang=>LANGS[lang].map(lf=>`
+          <div class="lang-option${S.lang===lang&&S.format===lf.fmt?' active':''}" onclick="selLangFmt('${lang}','${lf.fmt}')">
+            <span class="l-name">${lf.icon} ${lang}</span>
+            <span class="l-format">${lf.fmt}</span>
+          </div>`).join('')).join('')}
+      </div>
+    </div>
+
+    <h3 class="section-h">Select Date</h3>
+    <div class="pill-row">${DATES.map(d=>`<button class="pill${S.date===d.value?' active':''}" onclick="selDate('${d.value}',this)">${d.label}</button>`).join('')}</div>
+
+    <h3 class="section-h">Select Showtime</h3>
+    <div class="pill-row">${m.times.map(t=>`<button class="pill${S.time===t?' active':''}" onclick="selTime('${t}',this)">${t}</button>`).join('')}</div>
+
+    <button class="cta-btn${S.lang&&S.date&&S.time?' primary':' disabled'}" id="cta-seats" onclick="gotoSeats()">
+      ${S.lang&&S.date&&S.time?'Choose Seats →':'Select language, date & time to continue'}
+    </button>
+  </div>`;
+}
+
+function selLangFmt(l,f){S.lang=l;S.format=f;renderDetail();}
+function selDate(v,btn){S.date=v;document.querySelectorAll('#sub-detail .pill').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');updCtaSeats();}
+function selTime(t,btn){S.time=t;document.querySelectorAll('#sub-detail .pill[onclick*="selTime"]').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');updCtaSeats();}
+function updCtaSeats(){const b=document.getElementById('cta-seats');if(!b)return;if(S.lang&&S.date&&S.time){b.className='cta-btn primary';b.textContent='Choose Seats →';}else{b.className='cta-btn disabled';b.textContent='Select language, date & time to continue';}}
+function gotoSeats(){if(!S.lang||!S.date||!S.time)return;renderSeats();showSub('seats');}
+
+/* ── SEAT MAP ── */
+function buildSeats(){const rows=['A','B','C','D','E','F','G','H'];const map={};rows.forEach((r,ri)=>{map[r]=Array.from({length:12},(_,i)=>({id:`${r}${i+1}`,row:r,num:i+1,type:ri<2?'vip':ri<5?'premium':'standard',taken:Math.random()<0.28}));});return map;}
+
+function renderSeats(){
+  const m=S.movie;const d=DATES.find(x=>x.value===S.date);
+  const rows=['A','B','C','D','E','F','G','H'];
+  document.getElementById('sub-seats').innerHTML=`
+  <div class="container-md">
+    <button class="back-btn" onclick="renderDetail();showSub('detail')">← Back</button>
+    <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:5px">${m.title}</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:26px">${S.lang} · ${S.format} · ${d.label} · ${S.time}</p>
+    <div class="screen-wrap"><div class="screen-line"></div><div class="screen-text">Screen This Way</div></div>
+    <div class="seat-grid-wrap">
+      ${rows.map(row=>`<div class="seat-row-map"><span class="row-lbl">${row}</span>${S.seats[row].map((seat,i)=>`<button class="seat ${seat.taken?'taken':seat.type}${S.chosen.find(s=>s.id===seat.id)?' selected':''}" id="s-${seat.id}" ${seat.taken?'disabled':''} onclick="toggleSeat('${seat.id}')" title="${seat.taken?'Taken':seat.id+' ('+seat.type+')'}" ${i===5?'style="margin-left:14px"':''}></button>`).join('')}</div>`).join('')}
+    </div>
+    <div class="seat-legend">
+      <div class="sl-item"><div class="sl-swatch" style="background:#1a1a32;border:1px solid #32325a"></div>Standard</div>
+      <div class="sl-item"><div class="sl-swatch" style="background:#0e1e32;border:1px solid #1e4a7a"></div>Premium</div>
+      <div class="sl-item"><div class="sl-swatch" style="background:#0e2818;border:1px solid #1e5a30"></div>VIP</div>
+      <div class="sl-item"><div class="sl-swatch" style="background:var(--gold)"></div>Selected</div>
+      <div class="sl-item"><div class="sl-swatch" style="background:#16162a;opacity:.35"></div>Taken</div>
+    </div>
+    <div id="order-summary-box"></div>
+    <button class="cta-btn full disabled" id="cta-confirm" onclick="gotoPayment()">Select at least 1 seat</button>
+  </div>`;
+  updateSummary();
+}
+
+function toggleSeat(id){
+  const seat=Object.values(S.seats).flat().find(s=>s.id===id);
+  if(!seat||seat.taken)return;
+  const idx=S.chosen.findIndex(s=>s.id===id);
+  if(idx>-1)S.chosen.splice(idx,1);else S.chosen.push(seat);
+  const btn=document.getElementById('s-'+id);if(btn)btn.classList.toggle('selected',idx===-1);
+  updateSummary();
+}
+
+function updateSummary(){
+  const m=S.movie;
+  const sub=S.chosen.reduce((t,s)=>t+m.price[s.type],0);
+  const convenience=Math.round(sub*0.02+30);const gst=Math.round(sub*0.18);
+  let discount=0;if(S.appliedOffer){const o=OFFERS.find(x=>x.code===S.appliedOffer);if(o){discount=o.pct?Math.round(sub*o.pct/100):(o.flat||0);}}
+  const total=sub+gst+convenience-discount;
+  const box=document.getElementById('order-summary-box');const cta=document.getElementById('cta-confirm');
+  if(!box)return;
+  if(S.chosen.length===0){box.innerHTML='';if(cta){cta.className='cta-btn full disabled';cta.textContent='Select at least 1 seat';}return;}
+  box.className='order-box';
+  box.innerHTML=`
+    <h3>Order Summary</h3>
+    <div class="chosen-tags">${S.chosen.map(s=>`<span class="c-tag">${s.id} (${s.type}) — ${fmt(m.price[s.type])}</span>`).join('')}</div>
+    <div class="bill-row"><span class="bl">Subtotal (${S.chosen.length} seat${S.chosen.length>1?'s':''})</span><span>${fmt(sub)}</span></div>
+    <div class="bill-row"><span class="bl">GST (18%)</span><span>${fmt(gst)}</span></div>
+    <div class="bill-row"><span class="bl">Convenience Fee</span><span>${fmt(convenience)}</span></div>
+    ${discount>0?`<div class="bill-row" style="color:var(--green)"><span class="bl">Offer Discount (${S.appliedOffer})</span><span>− ${fmt(discount)}</span></div>`:''}
+    <hr class="bill-divider"/><div class="bill-total"><span>Total Payable</span><span>${fmt(total)}</span></div>
+    <div style="margin-top:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px">Apply Offer</div>
+    <div class="offer-chips">${OFFERS.map(o=>`<span class="offer-chip${S.appliedOffer===o.code?' applied':''}" onclick="applyOffer('${o.code}')">${o.label}</span>`).join('')}</div></div>
+    <div class="convenience-note">🛡️ 100% secure booking. No hidden charges beyond what is shown above.</div>`;
+  if(cta){cta.className='cta-btn full primary';cta.textContent=`Proceed to Payment — ${fmt(total)}`;}
+}
+
+function applyOffer(code){S.appliedOffer=S.appliedOffer===code?null:code;toast(S.appliedOffer?`✅ Offer ${code} applied!`:'Offer removed','info');updateSummary();}
+
+/* ── PAYMENT PAGE ── */
+function gotoPayment(){
+  if(!S.chosen.length)return;
+  const m=S.movie;
+  const sub=S.chosen.reduce((t,s)=>t+m.price[s.type],0);
+  const convenience=Math.round(sub*0.02+30);const gst=Math.round(sub*0.18);
+  let discount=0;if(S.appliedOffer){const o=OFFERS.find(x=>x.code===S.appliedOffer);if(o){discount=o.pct?Math.round(sub*o.pct/100):(o.flat||0);}}
+  const total=sub+gst+convenience-discount;
+  const d=DATES.find(x=>x.value===S.date);
+  S.pendingBooking={movie:m,date:S.date,dateLabel:d.label,time:S.time,lang:S.lang,format:S.format,seats:[...S.chosen],total,sub,gst,convenience,discount,offer:S.appliedOffer};
+  renderPayment(total);showSub('payment');
+}
+
+function renderPayment(total){
+  const m=S.movie;const b=S.pendingBooking;
+  document.getElementById('sub-payment').innerHTML=`
+  <div class="container">
+    <button class="back-btn" onclick="showSub('seats')">← Back to Seats</button>
+    <div class="pay-layout">
+      <!-- LEFT: PAYMENT FORM -->
+      <div class="pay-left">
+        <h2>Complete Your Payment</h2>
+
+        <!-- BOOKING DETAILS SUMMARY -->
+        <div class="pay-section">
+          <h4>📋 Booking Details</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;font-size:13px">
+            <div><span style="color:var(--muted)">Movie: </span><strong>${m.title}</strong></div>
+            <div><span style="color:var(--muted)">Language: </span>${b.lang} · ${b.format}</div>
+            <div><span style="color:var(--muted)">Date: </span>${new Date(b.date).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'long'})}</div>
+            <div><span style="color:var(--muted)">Show: </span>${b.time}</div>
+            <div><span style="color:var(--muted)">Seats: </span>${b.seats.map(s=>s.id).join(', ')}</div>
+            <div><span style="color:var(--muted)">Types: </span>${[...new Set(b.seats.map(s=>s.type))].join(', ')}</div>
+            <div><span style="color:var(--muted)">Subtotal: </span>${fmt(b.sub)}</div>
+            <div><span style="color:var(--muted)">GST (18%): </span>${fmt(b.gst)}</div>
+            <div><span style="color:var(--muted)">Conv. Fee: </span>${fmt(b.convenience)}</div>
+            ${b.discount>0?`<div style="color:var(--green)"><span>Discount: </span>− ${fmt(b.discount)}</div>`:''}
+          </div>
+          <div style="margin-top:14px;padding:12px 16px;background:linear-gradient(135deg,rgba(240,180,41,0.1),rgba(232,119,42,0.08));border:1px solid rgba(240,180,41,0.3);border-radius:12px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-family:var(--font-display);font-size:1.1rem;font-weight:700">Total Amount</span>
+            <span style="font-family:var(--font-display);font-size:1.4rem;font-weight:900;color:var(--gold)">${fmt(total)}</span>
+          </div>
+        </div>
+
+        <!-- PAYMENT METHOD -->
+        <div class="pay-section">
+          <h4>💳 Payment Method</h4>
+          <div class="pay-methods">
+            <div class="pay-method${S.payMethod==='upi'?' active':''}" onclick="setPayMethod('upi')"><span class="pm-icon">📱</span><div><div class="pm-name">UPI</div><div class="pm-sub">GPay, PhonePe, Paytm</div></div></div>
+            <div class="pay-method${S.payMethod==='card'?' active':''}" onclick="setPayMethod('card')"><span class="pm-icon">💳</span><div><div class="pm-name">Debit / Credit Card</div><div class="pm-sub">Visa, Mastercard, RuPay</div></div></div>
+            <div class="pay-method${S.payMethod==='netbanking'?' active':''}" onclick="setPayMethod('netbanking')"><span class="pm-icon">🏦</span><div><div class="pm-name">Net Banking</div><div class="pm-sub">All major banks</div></div></div>
+            <div class="pay-method${S.payMethod==='wallet'?' active':''}" onclick="setPayMethod('wallet')"><span class="pm-icon">👛</span><div><div class="pm-name">Wallet</div><div class="pm-sub">Paytm, Mobikwik, Freecharge</div></div></div>
+          </div>
+        </div>
+
+        <!-- UPI PANEL -->
+        <div class="pay-section" id="pay-upi-panel" style="${S.payMethod==='upi'?'':'display:none'}">
+          <h4>📱 Select UPI App</h4>
+          <div class="upi-row">
+            ${[{id:'gpay',label:'Google Pay',emoji:'🟢'},{id:'phonepe',label:'PhonePe',emoji:'🟣'},{id:'paytm',label:'Paytm',emoji:'🔵'},{id:'bhim',label:'BHIM UPI',emoji:'🟠'}].map(u=>`<div class="upi-app${S.upiApp===u.id?' active':''}" onclick="S.upiApp='${u.id}';renderPayment(${total})">${u.emoji} ${u.label}</div>`).join('')}
+          </div>
+          <div style="margin-top:16px">
+            <input class="pay-input" type="text" placeholder="Enter UPI ID (e.g. name@gpay)" id="upi-id-input"/>
+            <div style="font-size:11px;color:var(--muted)">Or scan the QR code at the theatre counter</div>
+          </div>
+        </div>
+
+        <!-- CARD PANEL -->
+        <div class="pay-section" id="pay-card-panel" style="${S.payMethod==='card'?'':'display:none'}">
+          <h4>💳 Card Details</h4>
+          <input class="pay-input" type="text" placeholder="Card Number (1234 5678 9012 3456)" maxlength="19" oninput="formatCard(this)"/>
+          <input class="pay-input" type="text" placeholder="Cardholder Name"/>
+          <div class="pay-row">
+            <input class="pay-input" type="text" placeholder="MM / YY" maxlength="5"/>
+            <input class="pay-input" type="password" placeholder="CVV" maxlength="3"/>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:4px"><span>🔒</span> 256-bit SSL encrypted · Your card details are never stored</div>
+        </div>
+
+        <!-- NETBANKING PANEL -->
+        <div class="pay-section" id="pay-nb-panel" style="${S.payMethod==='netbanking'?'':'display:none'}">
+          <h4>🏦 Select Your Bank</h4>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+            ${[{n:'SBI',e:'🏛️'},{n:'HDFC',e:'🔴'},{n:'ICICI',e:'🟠'},{n:'Axis',e:'🟣'},{n:'Kotak',e:'🔵'},{n:'Yes Bank',e:'🟢'}].map(b=>`<div style="padding:12px;border-radius:11px;background:var(--surface2);border:2px solid var(--border2);text-align:center;cursor:pointer;transition:.2s;font-size:13px;font-weight:600" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border2)'">${b.e}<br>${b.n}</div>`).join('')}
+          </div>
+        </div>
+
+        <!-- WALLET PANEL -->
+        <div class="pay-section" id="pay-wallet-panel" style="${S.payMethod==='wallet'?'':'display:none'}">
+          <h4>👛 Select Wallet</h4>
+          <div class="upi-row">
+            ${[{id:'paytm2',l:'Paytm',e:'🔵'},{id:'mobikwik',l:'Mobikwik',e:'🟣'},{id:'freecharge',l:'Freecharge',e:'🟢'},{id:'amazon',l:'Amazon Pay',e:'🟠'}].map(w=>`<div class="upi-app" onclick style="cursor:pointer" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border2)'">${w.e} ${w.l}</div>`).join('')}
+          </div>
+        </div>
+
+        <button class="cta-btn primary full" style="margin-top:8px;font-size:16px;padding:18px" onclick="confirmBooking()">
+          🔒 Pay Securely ${fmt(total)}
+        </button>
+        <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:12px">By clicking Pay, you agree to our Terms & Refund Policy. Powered by CinéVerse Secure Pay.</p>
+      </div>
+
+      <!-- RIGHT: ORDER SIDEBAR -->
+      <div class="order-sidebar">
+        <div class="os-movie-head">
+          <div class="os-thumb" style="background:linear-gradient(135deg,${m.color}22,${m.color}44)">${m.poster}</div>
+          <div>
+            <div class="os-title">${m.title}</div>
+            <div class="os-sub">${b.lang} · ${b.format}<br>${b.dateLabel} · ${b.time}<br>Seats: ${b.seats.map(s=>s.id).join(', ')}</div>
+          </div>
+        </div>
+        <div class="os-row"><span class="ol">Subtotal</span><span>${fmt(b.sub)}</span></div>
+        <div class="os-row"><span class="ol">GST (18%)</span><span>${fmt(b.gst)}</span></div>
+        <div class="os-row"><span class="ol">Convenience Fee</span><span>${fmt(b.convenience)}</span></div>
+        ${b.discount>0?`<div class="os-row" style="color:var(--green)"><span>Discount</span><span>− ${fmt(b.discount)}</span></div>`:''}
+        <div class="os-total"><span>Total</span><span>${fmt(total)}</span></div>
+        <div class="secure-badge">🛡️ <span>Bank-grade 256-bit SSL encryption</span></div>
+        <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:12px;font-size:11px;color:var(--muted);line-height:1.7">
+          <strong style="color:var(--text);font-size:12px">Cancellation Policy</strong><br>
+          Full refund up to 2 hrs before show. 50% refund within 2 hrs. No refund after showtime.
+        </div>
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+          ${OFFERS.map(o=>`<span style="padding:5px 11px;border-radius:14px;background:${S.appliedOffer===o.code?'var(--gold)':'rgba(240,180,41,0.08)'};color:${S.appliedOffer===o.code?'#07070f':'var(--gold)'};border:1px solid rgba(240,180,41,0.25);font-size:10px;font-weight:600;cursor:pointer" onclick="applyOffer('${o.code}');gotoPayment()">${o.code}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setPayMethod(m){S.payMethod=m;const panels={upi:'pay-upi-panel',card:'pay-card-panel',netbanking:'pay-nb-panel',wallet:'pay-wallet-panel'};Object.values(panels).forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const target=document.getElementById(panels[m]);if(target)target.style.display='block';document.querySelectorAll('.pay-method').forEach(el=>el.classList.remove('active'));event.currentTarget.classList.add('active');}
+function formatCard(el){let v=el.value.replace(/\D/g,'').substring(0,16);el.value=v.match(/.{1,4}/g)?.join(' ')||v;}
+
+/* ── CONFIRM ── */
+function confirmBooking(){
+  const b=S.pendingBooking;if(!b)return;
+  const earned=Math.floor(b.total/10);
+  S.user.points+=earned;S.user.totalBookings=(S.user.totalBookings||0)+1;
+  const bid='CV'+Math.random().toString(36).substr(2,9).toUpperCase();
+  const booking={...b,id:bid,earned};
+  S.bookings.unshift(booking);
+  updatePtsUI();
+  toast('🎉 Payment successful! Booking confirmed!');
+  renderConfirm(booking);showSub('confirm');
+}
+
+function renderConfirm(b){
+  // Generate simple QR pattern
+  const qrPattern=Array.from({length:64},(_,i)=>Math.random()>0.5?1:0);
+  const qrHTML=qrPattern.map(c=>`<div class="qr-cell" style="background:${c?'#07070f':'white'}"></div>`).join('');
+  document.getElementById('sub-confirm').innerHTML=`
+  <div class="confirm-wrap">
+    <div class="confetti-icon">🎉</div>
+    <h2 class="c-title">Payment Successful!</h2>
+    <p class="c-sub">Your booking is confirmed. Save your QR code below and arrive 15 mins early.</p>
+
+    <!-- QR CODE -->
+    <div class="qr-box">
+      <div class="qr-code">${qrHTML}</div>
+      <div style="font-family:monospace;font-size:13px;color:var(--gold);font-weight:700;letter-spacing:2px">${b.id}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">Show this QR at the theatre entrance</div>
+    </div>
+
+    <!-- TICKET -->
+    <div class="ticket">
+      <div class="ticket-banner" style="background:linear-gradient(135deg,${b.movie.color}30,${b.movie.color}60)">
+        <span style="font-size:58px;position:relative;z-index:2">${b.movie.poster}</span>
+        <div class="ticket-banner-overlay"></div>
+      </div>
+      <div class="ticket-body">
+        <div class="t-movie-head">
+          <div>
+            <h3 style="font-family:var(--font-display);font-size:1.3rem;font-weight:900;margin-bottom:6px">${b.movie.title}</h3>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span class="m-lang">${b.lang}</span>
+              <span class="m-lang" style="background:rgba(199,125,255,0.1);color:var(--purple);border-color:rgba(199,125,255,0.2)">${b.format}</span>
+              <span class="m-lang" style="background:rgba(240,180,41,0.1);color:var(--gold);border-color:rgba(240,180,41,0.2)">${b.movie.rating}</span>
+            </div>
+          </div>
+        </div>
+        <div class="t-row"><span class="tl">🎫 Booking ID</span><span class="tr" style="color:var(--gold);font-family:monospace">${b.id}</span></div>
+        <div class="t-row"><span class="tl">📅 Date</span><span class="tr">${new Date(b.date).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span></div>
+        <div class="t-row"><span class="tl">⏰ Showtime</span><span class="tr">${b.time}</span></div>
+        <div class="t-row"><span class="tl">💺 Seats</span><span class="tr">${b.seats.map(s=>s.id).join(', ')}</span></div>
+        <div class="t-row"><span class="tl">🏷️ Seat Type</span><span class="tr">${[...new Set(b.seats.map(s=>s.type))].join(', ')}</span></div>
+        <div class="t-row"><span class="tl">🎬 Director</span><span class="tr">${b.movie.director}</span></div>
+        <hr class="bill-divider"/>
+        <div class="t-row"><span class="tl">Subtotal</span><span class="tr">${fmt(b.sub)}</span></div>
+        <div class="t-row"><span class="tl">GST (18%)</span><span class="tr">${fmt(b.gst)}</span></div>
+        <div class="t-row"><span class="tl">Convenience Fee</span><span class="tr">${fmt(b.convenience)}</span></div>
+        ${b.discount>0?`<div class="t-row" style="color:var(--green)"><span>Offer Discount</span><span>− ${fmt(b.discount)}</span></div>`:''}
+        <div class="t-row" style="font-size:1.05rem;font-weight:700;color:var(--gold)"><span>Total Paid</span><span>${fmt(b.total)}</span></div>
+      </div>
+      <div class="ticket-footer">⭐ <span class="tf-text">+${b.earned} CinéPoints earned! New total: ${S.user.points.toLocaleString()} pts</span></div>
+    </div>
+    <button class="cta-btn primary full" onclick="switchTab('browse')" style="margin-bottom:12px">🎬 Book Another Movie</button>
+    <button class="cta-btn full" style="background:var(--surface);border:1px solid var(--border2);color:var(--muted)" onclick="switchTab('bookings')">View All Bookings →</button>
+  </div>`;
+}
+
+/* ── WISHLIST ── */
+function toggleWishlist(id){const i=S.wishlist.indexOf(id);if(i>-1){S.wishlist.splice(i,1);toast('Removed from wishlist');}else{S.wishlist.push(id);toast('Added to wishlist ❤️');}document.getElementById('wl-cnt').textContent=`(${S.wishlist.length})`;renderBrowse();}
+function renderWishlist(){
+  const wrap=document.getElementById('sub-wishlist');
+  if(!S.wishlist.length){wrap.innerHTML=`<div class="container"><h2 style="font-family:var(--font-display);font-size:1.8rem;margin-bottom:28px">Your Wishlist ❤️</h2><div class="empty-state"><span class="empty-icon">🎭</span><p>No movies saved yet.</p><button class="cta-btn primary" style="margin-top:20px" onclick="switchTab('browse')">Browse Movies</button></div></div>`;return;}
+  wrap.innerHTML=`<div class="container"><h2 style="font-family:var(--font-display);font-size:1.8rem;margin-bottom:28px">Your Wishlist ❤️</h2><div class="wl-grid">${S.wishlist.map(id=>{const m=MOVIES.find(x=>x.id===id);if(!m)return'';return`<div class="wl-card"><div class="wl-poster" style="background:linear-gradient(135deg,${m.color}22,${m.color}44)">${m.poster}</div><div class="wl-info"><h3 style="font-family:var(--font-display);font-size:15px">${m.title}</h3><div style="font-size:12px;color:var(--muted);margin-bottom:4px">${m.director}</div><div style="display:flex;gap:4px;flex-wrap:wrap">${m.languages.map(l=>`<span class="m-lang" style="font-size:10px">${l}</span>`).join('')}</div><div class="wl-btns"><button class="wl-btn book" onclick="openDetail(${m.id})">Book Now</button><button class="wl-btn del" onclick="toggleWishlist(${m.id});renderWishlist()">🗑</button></div></div></div>`;}).join('')}</div></div>`;
+}
+
+/* ── BOOKINGS ── */
+function renderBookings(){
+  const wrap=document.getElementById('sub-bookings');
+  if(!S.bookings.length){wrap.innerHTML=`<div class="container"><h2 style="font-family:var(--font-display);font-size:1.8rem;margin-bottom:28px">My Bookings 🎟️</h2><div class="empty-state"><span class="empty-icon">🎟️</span><p>No bookings yet!</p><button class="cta-btn primary" style="margin-top:20px" onclick="switchTab('browse')">Book a Movie</button></div></div>`;return;}
+  wrap.innerHTML=`<div class="container"><h2 style="font-family:var(--font-display);font-size:1.8rem;margin-bottom:28px">My Bookings 🎟️</h2>${S.bookings.map(b=>`
+    <div class="booking-card">
+      <div class="bc-poster" style="background:linear-gradient(135deg,${b.movie.color}22,${b.movie.color}44)">${b.movie.poster}</div>
+      <div class="bc-info">
+        <h4>${b.movie.title}</h4>
+        <div class="bc-meta">
+          📅 ${b.dateLabel} &nbsp;·&nbsp; ⏰ ${b.time}<br>
+          🌐 ${b.lang} · ${b.format}<br>
+          💺 ${b.seats.map(s=>s.id).join(', ')}<br>
+          🎬 ${b.movie.director}
+        </div>
+      </div>
+      <div class="bc-right">
+        <span class="confirmed-badge">✓ Confirmed</span>
+        <div class="bc-id">#${b.id}</div>
+        <div class="bc-total">${fmt(b.total)}</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+/* ── PROFILE ── */
+function renderProfile(){
+  const pts=S.user.points;
+  let tier,tIcon,tNext,tPct;
+  if(pts>=3000){tier='Platinum';tIcon='💎';tNext='Maximum tier reached!';tPct=100;}
+  else if(pts>=1500){tier='Gold';tIcon='🥇';tNext=`${(3000-pts).toLocaleString()} pts to Platinum`;tPct=((pts-1500)/1500)*100;}
+  else{tier='Silver';tIcon='🥈';tNext=`${(1500-pts).toLocaleString()} pts to Gold`;tPct=(pts/1500)*100;}
+  document.getElementById('sub-profile').innerHTML=`
+  <div class="container-sm">
+    <div style="text-align:center;margin-bottom:32px">
+      <div class="p-avatar">👤</div>
+      <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:900;margin-bottom:4px">${S.user.name}</div>
+      <div style="color:var(--muted);font-size:13px">CinéVerse Member · ${tier} Tier</div>
+    </div>
+    <div class="p-stats">
+      <div class="p-stat"><div class="ps-icon">⭐</div><div class="ps-val">${pts.toLocaleString()}</div><div class="ps-lbl">Points</div></div>
+      <div class="p-stat"><div class="ps-icon">🎟️</div><div class="ps-val">${S.bookings.length}</div><div class="ps-lbl">Bookings</div></div>
+      <div class="p-stat"><div class="ps-icon">❤️</div><div class="ps-val">${S.wishlist.length}</div><div class="ps-lbl">Wishlist</div></div>
+      <div class="p-stat"><div class="ps-icon">💰</div><div class="ps-val">${fmt(S.bookings.reduce((t,b)=>t+b.total,0))}</div><div class="ps-lbl">Spent</div></div>
+    </div>
+    <div class="tier-card">
+      <h3 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:16px">Loyalty Tier</h3>
+      <div class="tier-row"><span style="font-size:36px">${tIcon}</span><div><div class="tier-name">${tier} Member</div><div class="tier-sub">${tNext}</div></div></div>
+      <div class="progress-track"><div class="progress-fill" id="tier-fill" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)"><span>0</span><span>Silver</span><span>Gold 1,500</span><span>Platinum 3,000</span></div>
+    </div>
+    <div class="prefs-card">
+      <h3>Preferences</h3>
+      ${['notifications','recommendations','newsletter'].map(k=>`
+        <div class="pref-row">
+          <div><div class="pref-lbl">${k==='notifications'?'🔔 Notifications':k==='recommendations'?'🎬 Recommendations':'📧 Newsletter'}</div><div class="pref-sub">${k==='notifications'?'Alerts for upcoming shows':k==='recommendations'?'Personalised picks':'Weekly highlights'}</div></div>
+          <div class="toggle${S.toggles[k]?' on':''}" onclick="S.toggles['${k}']=!S.toggles['${k}'];renderProfile()"></div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+  setTimeout(()=>{const f=document.getElementById('tier-fill');if(f)f.style.width=tPct+'%';},120);
+}
+
+/* ── UPCOMING ── */
+let upLangFilter='All';
+function renderUpcoming(){
+  const langs=['All','Telugu','Hindi','English'];
+  const langColors={Telugu:'#f0b429',Hindi:'#ff4d6d',English:'#4cc9f0'};
+  const langIcons={Telugu:'🎬',Hindi:'🎥',English:'🎞️'};
+  const filtered=UPCOMING.filter(m=>upLangFilter==='All'||m.lang===upLangFilter);
+  const grouped={Telugu:UPCOMING.filter(m=>m.lang==='Telugu'),Hindi:UPCOMING.filter(m=>m.lang==='Hindi'),English:UPCOMING.filter(m=>m.lang==='English')};
+
+  const card=(m,i)=>`
+    <div class="upcoming-card" style="animation-delay:${i*.06}s;animation:scaleIn .4s ease ${i*.06}s both">
+      <div class="up-thumb" style="background:linear-gradient(135deg,${m.color}20,${m.color}48)">
+        <span style="font-size:68px;position:relative;z-index:2">${m.poster}</span>
+        <div class="up-overlay"></div>
+        <div class="up-lang-badge" style="background:${langColors[m.lang]}22;color:${langColors[m.lang]};border:1px solid ${langColors[m.lang]}44">${langIcons[m.lang]} ${m.lang}</div>
+        <div class="up-hype-badge">🔥 ${m.hype}%</div>
+        <div class="up-date">📅 ${m.releaseDate}</div>
+      </div>
+      <div class="up-body">
+        <h3 style="font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:6px;line-height:1.3">${m.title}</h3>
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <span style="padding:3px 10px;border-radius:16px;font-size:10px;font-weight:600;background:${m.color}18;color:${m.color};border:1px solid ${m.color}30">${m.genre}</span>
+        </div>
+        <p style="color:var(--muted);font-size:12px;line-height:1.65;margin-bottom:10px">${m.desc.substring(0,85)}...</p>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">🎬 ${m.director}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">👥 ${m.cast.slice(0,3).join(' · ')}</div>
+        <div class="up-hype-bar"><div class="up-hype-fill" style="width:${m.hype}%;background:linear-gradient(90deg,${m.color},${m.color}88)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:12px"><span>Hype Meter</span><span style="color:${m.color};font-weight:700">${m.hype}%</span></div>
+        <button class="remind-btn" style="background:${S.reminders&&S.reminders.includes(m.id)?m.color:'transparent'};color:${S.reminders&&S.reminders.includes(m.id)?'#07070f':m.color};border-color:${m.color}44" onclick="addReminder('${m.id}','${m.title.replace(/'/g,"\\'")}')">${S.reminders&&S.reminders.includes(m.id)?'🔔 Reminder Set':'🔔 Remind Me'}</button>
+      </div>
+    </div>`;
+
+  const section=(lang,movies)=>`
+    <div style="margin-bottom:48px">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+        <span style="font-size:28px">${langIcons[lang]}</span>
+        <div><h2 style="font-family:var(--font-display);font-size:1.7rem;font-weight:900;color:${langColors[lang]}">${lang} Upcoming</h2><p style="color:var(--muted);font-size:12px;margin-top:2px">${movies.length} films releasing soon</p></div>
+        <span style="margin-left:auto;padding:5px 14px;border-radius:20px;background:${langColors[lang]}12;border:1px solid ${langColors[lang]}30;font-size:12px;font-weight:600;color:${langColors[lang]}">${movies.length} Films</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">${movies.map((m,i)=>card(m,i)).join('')}</div>
+    </div>`;
+
+  document.getElementById('sub-upcoming').innerHTML=`
+  <div class="container">
+    <div style="margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border)">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.22);padding:5px 16px;border-radius:24px;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">🗓️ Coming Soon 2026</div>
+      <h1 style="font-family:var(--font-display);font-size:clamp(1.8rem,5vw,2.8rem);font-weight:900;line-height:1.1;margin-bottom:10px">Most Awaited<br><span style="background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Upcoming Movies</span></h1>
+      <p style="color:var(--muted);font-size:14px;max-width:500px;line-height:1.7;margin-bottom:20px">Telugu, Hindi & English blockbusters of 2026. Set reminders so you never miss opening day.</p>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        ${langs.map(l=>{const active=upLangFilter===l;const col=l==='Telugu'?'#f0b429':l==='Hindi'?'#ff4d6d':l==='English'?'#4cc9f0':'#e8e8ff';return`<button style="padding:9px 18px;border-radius:22px;font-family:var(--font-body);font-size:13px;font-weight:${active?700:500};background:${active?col+'22':'var(--surface2)'};color:${active?col:'var(--muted)'};border:${active?`2px solid ${col}55`:'1px solid var(--border2)'};cursor:pointer;transition:.2s" onclick="upLangFilter='${l}';renderUpcoming()">${l==='Telugu'?'🎬':l==='Hindi'?'🎥':l==='English'?'🎞️':'🌐'} ${l}</button>`;}).join('')}
+      </div>
+    </div>
+    ${S.reminders&&S.reminders.length>0?`<div style="background:rgba(6,214,160,0.07);border:1px solid rgba(6,214,160,0.25);border-radius:14px;padding:13px 18px;margin-bottom:26px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--green)">🔔 <span>Reminders set for ${S.reminders.length} movie${S.reminders.length>1?'s':''}. We'll notify you on release day!</span></div>`:''}
+    ${upLangFilter==='All'?['Telugu','Hindi','English'].map(l=>section(l,grouped[l])).join(''):section(upLangFilter,filtered)}
+  </div>`;
+}
+
+function addReminder(id,title){if(!S.reminders)S.reminders=[];if(S.reminders.includes(id)){toast(`Already reminded for "${title}" 🔔`,'info');return;}S.reminders.push(id);toast(`✅ Reminder set for "${title}"!`);renderUpcoming();}
+
+/* ── UTILS ── */
+function updatePtsUI(){document.getElementById('app-pts').textContent=S.user.points.toLocaleString();document.getElementById('landing-pts').textContent=S.user.points.toLocaleString();}
+function renderMiniMovies(){document.getElementById('mini-movies').innerHTML=MOVIES.map(m=>`<div class="mini-movie-card" onclick="goToApp();openDetail(${m.id})"><div class="mini-poster" style="background:linear-gradient(135deg,${m.color}22,${m.color}44)">${m.poster}</div><div class="mini-info"><div class="mini-title">${m.title}</div><div class="mini-genre">${m.genre} · ${m.languages.slice(0,2).join(', ')}</div></div></div>`).join('');}
+
+/* INIT */
+renderMiniMovies();
+renderBrowse();
+</script>
+</body>
+</html>
